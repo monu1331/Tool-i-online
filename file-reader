@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Text File Reader & Viewer — Tool i online</title>
+  <meta name="description" content="Open, read, search and export text files quickly. Clean, responsive Text File Reader & Viewer with local-only processing. Theme: green.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --green:#26A69A; --muted:#6b6b6b; --bg:#fff; --card-radius:12px; --shadow:0 10px 30px rgba(16,16,16,0.06); --maxw:1200px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:var(--bg); color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    h1{font-size:1.2rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04);align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06);color:#333}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
+    .panel{padding:12px}
+
+    /* viewer */
+    .viewer{min-height:60vh;display:flex;flex-direction:column}
+    .dropzone{border:2px dashed rgba(0,0,0,0.06);border-radius:10px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:140px;background:linear-gradient(180deg, rgba(38,166,154,0.02), transparent)}
+    .dropzone.dragover{border-color:var(--green);background:linear-gradient(180deg, rgba(38,166,154,0.04), rgba(38,166,154,0.01))}
+
+    .file-meta{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:0.95rem;margin-bottom:8px}
+
+    .content-area{display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.04)}
+    .gutter{background:#f7f7f7;padding:8px 10px;font-family:ui-monospace,monospace;color:var(--muted);min-width:56px;overflow:auto}
+    .text-wrap{flex:1;padding:10px;background:#fff;overflow:auto}
+    pre#textOutput{margin:0;white-space:pre;word-break:break-word;font-family:ui-monospace,monospace;font-size:0.95rem}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .search{display:flex;gap:8px;align-items:center}
+    input[type=search], input[type=file], select, input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+
+    .right-panel .row{margin-bottom:12px}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .gutter{display:none} }
+    @media (max-width:480px){ .logo-mark{width:40px;height:40px} .dropzone{min-height:120px} }
+
+    /* highlight style for search matches */
+    mark{background: #ffea94; color: #111; padding:0 2px; border-radius:2px}
+
+    /* accessibility */
+    :focus{outline:3px solid rgba(38,166,154,0.12)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <div class="logo-mark">Ti</div>
+        <div>
+          <h1>Text File Reader & Viewer</h1>
+          <p class="lead">Open, read, search and export text files locally. Fast, safe and responsive. Theme: green.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="browseBtn" class="btn ghost"><i class="fa-solid fa-folder-open"></i> Open File</button>
+          <input id="fileInput" type="file" accept=".txt,.log,.md,.csv,.json,text/*" style="display:none">
+          <button id="downloadBtn" class="btn primary"><i class="fa-solid fa-download"></i> Download</button>
+          <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <div style="flex:1"></div>
+        <div class="search">
+          <input id="searchInput" type="search" placeholder="Search in file..." aria-label="Search in file">
+          <label class="small"><input id="caseSensitive" type="checkbox"> Case</label>
+          <label class="small"><input id="showLines" type="checkbox" checked> Line #</label>
+        </div>
+      </div>
+
+      <div style="padding:12px">
+        <div class="grid">
+          <section class="panel viewer" aria-label="File viewer">
+            <div id="dropzone" class="dropzone" tabindex="0" aria-label="Drop text file here or click to open">
+              <div><strong>Drop a text file</strong> here or click <button id="dropBrowse" class="btn ghost" type="button">Browse</button></div>
+              <div class="small">Supports .txt, .md, .csv, .log, .json. Files processed locally — not uploaded.</div>
+            </div>
+
+            <div class="file-meta" id="fileMeta" style="display:none">
+              <div id="fileName"></div>
+              <div id="fileSize"></div>
+              <div id="fileLines"></div>
+            </div>
+
+            <div class="content-area" id="contentArea" style="display:none">
+              <div class="gutter" id="gutter"></div>
+              <div class="text-wrap"><pre id="textOutput"></pre></div>
+            </div>
+
+            <div class="controls">
+              <label class="small">Font size</label>
+              <input id="fontSize" type="number" min="12" max="24" value="14" style="width:90px">
+              <label class="small">Wrap</label>
+              <select id="wrapSelect"><option value="no">No wrap</option><option value="soft" selected>Soft wrap</option></select>
+              <div style="flex:1"></div>
+              <div id="matchCount" class="small"></div>
+            </div>
+
+          </section>
+
+          <aside class="panel right-panel" aria-label="Options">
+            <div class="row">
+              <label class="small">Encoding</label>
+              <select id="encodingSelect"><option value="utf-8">UTF-8</option><option value="windows-1252">Windows-1252</option><option value="iso-8859-1">ISO-8859-1</option></select>
+            </div>
+
+            <div class="row">
+              <label class="small">Search options</label>
+              <div class="small">Use the search box in the toolbar to find text. Matches are highlighted.</div>
+            </div>
+
+            <div class="row">
+              <label class="small">Actions</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button id="highlightBtn" class="btn ghost">Highlight All</button>
+                <button id="clearHighlight" class="btn ghost">Clear Highlights</button>
+                <button id="downloadSelection" class="btn ghost">Download Selection</button>
+              </div>
+            </div>
+
+            <div class="row small">
+              <div><strong>Privacy</strong></div>
+              <div>All files are processed locally in your browser — nothing leaves your device.</div>
+            </div>
+
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const browseBtn = document.getElementById('browseBtn');
+    const fileInput = document.getElementById('fileInput');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const dropBrowse = document.getElementById('dropBrowse');
+    const dropzone = document.getElementById('dropzone');
+
+    const fileMeta = document.getElementById('fileMeta');
+    const fileNameEl = document.getElementById('fileName');
+    const fileSizeEl = document.getElementById('fileSize');
+    const fileLinesEl = document.getElementById('fileLines');
+
+    const contentArea = document.getElementById('contentArea');
+    const gutter = document.getElementById('gutter');
+    const textOutput = document.getElementById('textOutput');
+
+    const searchInput = document.getElementById('searchInput');
+    const caseSensitive = document.getElementById('caseSensitive');
+    const showLines = document.getElementById('showLines');
+    const fontSizeInput = document.getElementById('fontSize');
+    const wrapSelect = document.getElementById('wrapSelect');
+    const matchCount = document.getElementById('matchCount');
+
+    const encodingSelect = document.getElementById('encodingSelect');
+    const highlightBtn = document.getElementById('highlightBtn');
+    const clearHighlight = document.getElementById('clearHighlight');
+    const downloadSelection = document.getElementById('downloadSelection');
+
+    let currentText = '';
+    let lines = [];
+    let currentFile = null;
+
+    // Helpers
+    function formatBytes(bytes){ if(bytes < 1024) return bytes + ' B'; const kb = bytes/1024; if(kb < 1024) return kb.toFixed(1) + ' KB'; return (kb/1024).toFixed(2) + ' MB'; }
+
+    function setFileMeta(file){ fileNameEl.textContent = file.name; fileSizeEl.textContent = formatBytes(file.size); fileMeta.style.display = ''; }
+
+    function renderText(text){
+      currentText = text;
+      // split into lines
+      lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+      // line numbers
+      if(showLines.checked){ gutter.innerHTML = lines.map((_,i)=> String(i+1)).join('\n'); } else { gutter.innerHTML = ''; }
+      // content
+      // escape html
+      const esc = lines.map(l=> l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')).join('\n');
+      textOutput.innerHTML = esc;
+      contentArea.style.display = '';
+      fileLinesEl.textContent = `${lines.length} lines`;
+      fileLinesEl.style.display = '';
+      matchCount.textContent = '';
+      applyWrap();
+      applyFontSize();
+    }
+
+    function applyWrap(){
+      if(wrapSelect.value === 'no'){ textOutput.style.whiteSpace = 'pre'; }
+      else { textOutput.style.whiteSpace = 'pre-wrap'; }
+    }
+
+    function applyFontSize(){ textOutput.style.fontSize = fontSizeInput.value + 'px'; gutter.style.fontSize = fontSizeInput.value + 'px'; }
+
+    // File reading
+    function handleFile(file){
+      currentFile = file;
+      setFileMeta(file);
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        renderText(String(reader.result));
+      };
+      // For simplicity we read as text using default encoding; encoding selection can be used to re-interpret if required
+      reader.readAsText(file, encodingSelect.value || 'utf-8');
+    }
+
+    // Events
+    browseBtn.addEventListener('click', ()=> fileInput.click());
+    dropBrowse.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', (e)=>{ const f = e.target.files && e.target.files[0]; if(f) handleFile(f); fileInput.value=''; });
+
+    // drag/drop
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', e => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+    // search & highlight
+    function highlightMatches(){
+      if(!currentText) return;
+      const q = searchInput.value;
+      if(!q){ // clear
+        renderText(currentText); return; }
+      const flags = caseSensitive.checked ? 'g' : 'gi';
+      try{
+        const re = new RegExp(q.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'), flags);
+        let count = 0;
+        const escapedLines = lines.map(l=>{
+          const escaped = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          const replaced = escaped.replace(re, match => { count++; return `<mark>${match}</mark>`; });
+          return replaced;
+        });
+        textOutput.innerHTML = escapedLines.join('\n');
+        matchCount.textContent = `${count} matches`;
+      }catch(e){ console.warn('Invalid regex', e); }
+    }
+
+    const debounce = (fn, wait=200)=>{ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); }; };
+    searchInput.addEventListener('input', debounce(highlightMatches, 200));
+    caseSensitive.addEventListener('change', highlightMatches);
+    showLines.addEventListener('change', ()=>{ if(currentText) renderText(currentText); });
+    wrapSelect.addEventListener('change', applyWrap);
+    fontSizeInput.addEventListener('input', applyFontSize);
+
+    // highlight all / clear
+    highlightBtn.addEventListener('click', highlightMatches);
+    clearHighlight.addEventListener('click', ()=>{ if(currentText) renderText(currentText); matchCount.textContent = ''; searchInput.value=''; });
+
+    // copy full text
+    copyBtn.addEventListener('click', async ()=>{
+      if(!currentText){ alert('No file loaded'); return; }
+      try{ await navigator.clipboard.writeText(currentText); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); }
+    });
+
+    // download (full file or selection)
+    downloadBtn.addEventListener('click', ()=>{
+      if(!currentText){ alert('No file loaded'); return; }
+      const blob = new Blob([currentText], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = currentFile ? currentFile.name : 'file.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    // download selection
+    downloadSelection.addEventListener('click', ()=>{
+      const sel = window.getSelection().toString();
+      if(!sel) return alert('Select some text in the viewer to download');
+      const blob = new Blob([sel], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (currentFile ? currentFile.name.replace(/\.[^/.]+$/,'') : 'selection') + '-selection.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    // initial keyboard accessibility for dropzone
+    dropzone.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { fileInput.click(); e.preventDefault(); } });
+
+  </script>
+</body>
+</html>
