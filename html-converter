@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Markdown → HTML — Tool i online</title>
+  <meta name="description" content="Convert Markdown to clean HTML with live preview. Professional, responsive Markdown → HTML converter (green theme)." />
+  <!-- Libraries: marked (markdown parser) and DOMPurify (sanitize) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --green: #26A69A; --green-700:#1f8c7f; --bg:#ffffff; --muted:#6b6b6b; --card-radius:12px; --shadow:0 12px 30px rgba(10,10,12,0.06); --maxw:1200px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    h1{font-size:1.2rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04);align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06);color:#333}
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .panel{padding:12px}
+    .editor-area, .preview-area{min-height:56vh;display:flex;flex-direction:column;gap:8px}
+    textarea#mdInput{width:100%;height:100%;min-height:360px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:0.95rem;resize:vertical}
+
+    .preview{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);background:#fafafa;overflow:auto}
+    .options{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .select, .input{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+
+    footer.small{padding:12px;color:var(--muted);font-size:0.9rem;text-align:center}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .editor-area, .preview-area{min-height:40vh} }
+    @media (max-width:480px){ .logo-mark{width:40px;height:40px} .toolbar{flex-wrap:wrap} }
+
+    /* nice default styles for generated html in preview */
+    .preview h1,.preview h2,.preview h3{margin:0.6em 0}
+    .preview p{margin:0.5em 0}
+    .preview pre{background:#111;color:#fff;padding:12px;border-radius:6px;overflow:auto}
+    .preview code{background:#f5f5f5;padding:2px 6px;border-radius:4px}
+    .preview img{max-width:100%;height:auto;border-radius:6px}
+
+    /* focus-visible */
+    :focus:not(:focus-visible){outline:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <div class="logo-mark">Ti</div>
+        <div>
+          <h1>Markdown → HTML</h1>
+          <p class="lead">Live Markdown to HTML converter. Sanitize output, copy or download HTML. Theme: green.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="loadSample" class="btn ghost" title="Load sample markdown">Sample</button>
+          <button id="clearBtn" class="btn ghost" title="Clear editor">Clear</button>
+          <button id="uploadMd" class="btn ghost" title="Upload .md file">Upload</button>
+          <input id="fileInput" type="file" accept=".md,.markdown" style="display:none" />
+        </div>
+
+        <div style="flex:1"></div>
+
+        <div class="options">
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="sanitize" checked> Sanitize</label>
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="fullHtml"> Export full HTML</label>
+          <select id="stylePreset" class="select">
+            <option value="none">No stylesheet</option>
+            <option value="github">GitHub-like</option>
+            <option value="article">Simple article</option>
+          </select>
+
+          <button id="copyBtn" class="btn ghost" title="Copy HTML"><i class="fa-solid fa-copy"></i> Copy</button>
+          <button id="downloadBtn" class="btn primary" title="Download HTML"><i class="fa-solid fa-download"></i> Download</button>
+        </div>
+      </div>
+
+      <div style="padding:12px">
+        <div class="grid">
+          <section class="panel editor-area" aria-label="Markdown editor">
+            <label style="font-weight:600">Markdown</label>
+            <textarea id="mdInput" placeholder="# Start typing Markdown..." spellcheck="false"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="small" id="charCount">0 chars</div>
+              <div class="small">Live preview on the right</div>
+            </div>
+          </section>
+
+          <aside class="panel preview-area" aria-label="HTML preview">
+            <label style="font-weight:600">HTML Preview</label>
+            <div id="preview" class="preview" aria-live="polite"></div>
+            <details style="margin-top:8px"><summary style="cursor:pointer">Generated HTML (click to view)</summary>
+              <pre id="htmlOutput" style="white-space:pre-wrap;word-break:break-word;padding:12px;background:#fafafa;border-radius:6px;margin-top:8px;max-height:240px;overflow:auto"></pre>
+            </details>
+          </aside>
+        </div>
+      </div>
+
+      <footer class="small">All processing happens in your browser — nothing is uploaded. Use sanitized output for embedding in web pages.</footer>
+    </main>
+  </div>
+
+  <script>
+    // Wait for marked & DOMPurify loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      const mdInput = document.getElementById('mdInput');
+      const preview = document.getElementById('preview');
+      const htmlOutput = document.getElementById('htmlOutput');
+      const charCount = document.getElementById('charCount');
+      const sanitizeCheckbox = document.getElementById('sanitize');
+      const fullHtml = document.getElementById('fullHtml');
+      const copyBtn = document.getElementById('copyBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const loadSample = document.getElementById('loadSample');
+      const clearBtn = document.getElementById('clearBtn');
+      const uploadMd = document.getElementById('uploadMd');
+      const fileInput = document.getElementById('fileInput');
+      const stylePreset = document.getElementById('stylePreset');
+
+      // sample markdown
+      const sample = `# Sample Document\n\nThis is a **sample** markdown document.\n\n- Item one\n- Item two\n\n> A blockquote.\n\n\` + "`code`" + ` snippet.\n\n![Kitten](https://placekitten.com/800/300)\n`;
+
+      // debounce
+      function debounce(fn, wait=180){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); }; }
+
+      function render(){
+        const md = mdInput.value || '';
+        charCount.textContent = `${md.length} chars`;
+        // parse markdown with marked
+        let html = '';
+        try{
+          html = marked.parse(md, {mangle:false, headerIds:true});
+        }catch(e){ html = '<pre>Error parsing markdown</pre>'; }
+        // sanitize if requested
+        if(sanitizeCheckbox.checked && window.DOMPurify){ html = DOMPurify.sanitize(html); }
+        preview.innerHTML = html;
+        htmlOutput.textContent = html;
+      }
+
+      const doRender = debounce(render, 150);
+
+      mdInput.addEventListener('input', doRender);
+      sanitizeCheckbox.addEventListener('change', doRender);
+
+      // initial sample
+      mdInput.value = sample;
+      render();
+
+      // buttons
+      loadSample.addEventListener('click', ()=>{ mdInput.value = sample; render(); mdInput.focus(); });
+      clearBtn.addEventListener('click', ()=>{ if(!confirm('Clear editor?')) return; mdInput.value=''; render(); });
+
+      uploadMd.addEventListener('click', ()=> fileInput.click());
+      fileInput.addEventListener('change', (e)=>{
+        const f = e.target.files && e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ()=>{ mdInput.value = reader.result; render(); }; reader.readAsText(f); fileInput.value = '';
+      });
+
+      copyBtn.addEventListener('click', async ()=>{
+        const html = fullHtml.checked ? buildFullHtml(htmlOutput.textContent) : htmlOutput.textContent;
+        try{ await navigator.clipboard.writeText(html); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed — your browser may block clipboard'); }
+      });
+
+      downloadBtn.addEventListener('click', ()=>{
+        const html = fullHtml.checked ? buildFullHtml(htmlOutput.textContent) : htmlOutput.textContent;
+        const blob = new Blob([html], {type:'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'document.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+      });
+
+      function buildFullHtml(bodyHtml){
+        let stylesheet = '';
+        if(stylePreset.value==='github'){
+          stylesheet = `<style>body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:28px;color:#111} pre{background:#24292e;color:#fff;padding:12px;border-radius:6px} code{background:#f6f8fa;padding:2px 6px;border-radius:6px} img{max-width:100%;height:auto}</style>`;
+        }else if(stylePreset.value==='article'){
+          stylesheet = `<style>body{font-family:Georgia,serif;margin:36px;color:#111;max-width:800px} h1,h2,h3{color:#184e47} pre{background:#f3f4f3;padding:12px;border-radius:6px} img{max-width:100%;height:auto}</style>`;
+        }
+        return `<!doctype html>\n<html lang="en">\n<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>${stylesheet}</head>\n<body>\n${bodyHtml}\n</body>\n</html>`;
+      }
+
+      // style preset change updates nothing immediately for preview but affects download/fullHtml
+      stylePreset.addEventListener('change', ()=>{/* noop */});
+
+      // keyboard: Ctrl/Cmd+Enter to copy html, Ctrl/Cmd+S to download
+      document.addEventListener('keydown', (e)=>{
+        if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ e.preventDefault(); copyBtn.click(); }
+        if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); downloadBtn.click(); }
+      });
+
+    });
+  </script>
+</body>
+</html>
