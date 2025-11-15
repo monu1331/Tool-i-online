@@ -919,7 +919,7 @@ function populateTools() {
         <div class="tool-icon-small"><i class="${tool.icon}"></i></div>
         <h3 class="tool-name">${tool.name}</h3>
         <p class="tool-description">${tool.description}</p>
-        <a href="#" class="tool-btn" role="button" aria-label="Use ${tool.name}">Use Tool</a>
+        <a href="${tool.url || '#'}" class="tool-btn" role="button" aria-label="Use ${tool.name}">Use Tool</a>
       `;
       categoryGrid.appendChild(card);
     });
