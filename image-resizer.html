@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Resizer — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --red: #D32F2F;
+      --red-600: #b71c1c;
+      --bg: #ffffff;
+      --muted: #6b6b6b;
+      --radius: 12px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.06);
+      --container: 1100px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,#fff 0%, #fbfbfb 100%);
+      color:#222;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:28px 16px;
+    }
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo .icon{width:52px;height:52px;border-radius:12px;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;box-shadow:var(--shadow)}
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:4px 0 0;font-size:14px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:18px}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+
+    .drop{border:2px dashed rgba(211,47,47,0.12);border-radius:10px;padding:18px;text-align:center;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#fff}
+    .drop.drag{background:rgba(211,47,47,0.03);border-color:var(--red)}
+    .drop i{font-size:36px;color:var(--red)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--red);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee;color:#222}
+    .file-input{display:none}
+
+    .preview{margin-top:12px;border-radius:8px;overflow:hidden;border:1px solid #eee;display:flex;align-items:center;justify-content:center;min-height:140px;background:#fafafa}
+    .preview img{max-width:100%;height:auto;display:block}
+
+    .side h4{margin:0 0 8px 0}
+    .field{margin-bottom:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    select,input[type=range],input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid #eee}
+    .small{font-size:13px;color:var(--muted)}
+
+    .actions{display:flex;gap:10px;margin-top:12px}
+    .actions .btn{flex:1}
+
+    footer{color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
+
+    .presets{display:flex;gap:8px;flex-wrap:wrap}
+    .preset{padding:6px 8px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer}
+
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    @media (max-width:420px){body{padding:18px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><div class="icon">Ti</div></div>
+      <div>
+        <h1>Image Resizer</h1>
+        <p class="lead">Resize images and convert between JPG, PNG and WebP — client-side, fast & private.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div id="drop" class="drop" tabindex="0" aria-label="Drop image here or click to choose">
+            <i class="fa-solid fa-image"></i>
+            <div style="font-weight:700">Drop image here</div>
+            <div class="small">or <button id="choose" class="btn primary" type="button">Choose file</button></div>
+            <div class="small">Supported: JPG, PNG, WebP — max 20 MB</div>
+            <input id="file" class="file-input" type="file" accept="image/*">
+          </div>
+
+          <div class="preview" id="preview" aria-live="polite">
+            <div style="padding:12px;color:var(--muted)">No image selected</div>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button id="resize" class="btn primary">Resize & Convert</button>
+            <button id="download" class="btn ghost" style="display:none">Download</button>
+            <button id="reset" class="btn ghost">Reset</button>
+          </div>
+
+          <div style="margin-top:10px" class="small" id="status">Ready</div>
+        </section>
+
+        <aside class="side">
+          <div class="card" style="padding:12px">
+            <h4>Resize & Output Settings</h4>
+
+            <div class="field">
+              <label for="mode">Resize mode</label>
+              <select id="mode">
+                <option value="exact">Exact (width & height)</option>
+                <option value="max">Max width/height (keep aspect)</option>
+                <option value="percent">Percentage</option>
+              </select>
+            </div>
+
+            <div class="field" id="sizeExact">
+              <label for="width">Width (px)</label>
+              <input id="width" type="number" min="1" placeholder="e.g. 800">
+              <label for="height" style="margin-top:8px">Height (px)</label>
+              <input id="height" type="number" min="1" placeholder="e.g. 600">
+              <label style="margin-top:8px"><input id="keepAspect" type="checkbox" checked> Maintain aspect ratio</label>
+            </div>
+
+            <div class="field" id="sizeMax" style="display:none">
+              <label for="maxDim">Max dimension (px)</label>
+              <input id="maxDim" type="number" min="1" placeholder="e.g. 1024">
+            </div>
+
+            <div class="field" id="sizePercent" style="display:none">
+              <label for="percent">Scale (%)</label>
+              <input id="percent" type="number" min="1" max="100" value="100">
+            </div>
+
+            <div class="field">
+              <label for="outFormat">Output format</label>
+              <select id="outFormat">
+                <option value="image/jpeg">JPEG (.jpg)</option>
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/webp">WebP (.webp)</option>
+              </select>
+            </div>
+
+            <div class="field" id="qualityField">
+              <label for="quality">Quality: <span id="qVal">0.9</span></label>
+              <input id="quality" type="range" min="0.1" max="1" step="0.01" value="0.9">
+              <div class="small">Applies to JPEG & WebP. Lower quality → smaller size.</div>
+            </div>
+
+            <div class="field">
+              <label>Presets</label>
+              <div class="presets">
+                <div class="preset" data-w="128" data-h="128">Avatar 128×128</div>
+                <div class="preset" data-w="800" data-h="600">Web 800×600</div>
+                <div class="preset" data-w="1920" data-h="1080">HD 1920×1080</div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="previewBtn" class="btn ghost">Preview</button>
+              <button id="openBtn" class="btn ghost">Open in tab</button>
+            </div>
+
+            <hr style="margin:12px 0;border:none;border-top:1px solid #f3f3f3">
+            <div class="small"><strong>File info</strong></div>
+            <div class="small" id="info">No file</div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer>Resize & convert runs locally in your browser — your files are not uploaded.</footer>
+  </div>
+
+  <script>
+    const drop = document.getElementById('drop');
+    const choose = document.getElementById('choose');
+    const fileInput = document.getElementById('file');
+    const preview = document.getElementById('preview');
+    const resizeBtn = document.getElementById('resize');
+    const downloadBtn = document.getElementById('download');
+    const resetBtn = document.getElementById('reset');
+    const mode = document.getElementById('mode');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const keepAspect = document.getElementById('keepAspect');
+    const maxDim = document.getElementById('maxDim');
+    const percent = document.getElementById('percent');
+    const outFormat = document.getElementById('outFormat');
+    const quality = document.getElementById('quality');
+    const qVal = document.getElementById('qVal');
+    const sizeExact = document.getElementById('sizeExact');
+    const sizeMax = document.getElementById('sizeMax');
+    const sizePercent = document.getElementById('sizePercent');
+    const previewBtn = document.getElementById('previewBtn');
+    const openBtn = document.getElementById('openBtn');
+    const info = document.getElementById('info');
+
+    let file = null;
+    let img = null;
+    let lastBlob = null;
+
+    function showText(t){preview.innerHTML = '<div style="padding:12px;color:var(--muted)">'+t+'</div>'}
+    function bytes(n){return n<1024? n+' B' : n<1024*1024? Math.round(n/1024)+' KB' : Math.round(n/1024/1024)+' MB'}
+
+    function handleFile(f){
+      if(!f) return;
+      if(!f.type.startsWith('image/')){alert('Please select an image');return}
+      if(f.size > 20*1024*1024){ if(!confirm('File is large (>'+(Math.round(f.size/1024/1024))+'MB). Continue?')) return }
+      file = f;
+      const url = URL.createObjectURL(f);
+      const i = new Image();
+      i.onload = ()=>{ img = i; showImagePreview(i); info.innerHTML = 'Name: '+escapeHtml(f.name)+'<br>Type: '+f.type+' — '+bytes(f.size)+'<br>Dimensions: '+i.naturalWidth+'×'+i.naturalHeight; lastBlob=null; downloadBtn.style.display='none'; status.textContent='Ready'; };
+      i.onerror=()=>{showText('Unable to load image');img=null}
+      i.src = url;
+    }
+
+    function showImagePreview(i){ const wrapper = document.createElement('div'); wrapper.style.display='flex'; wrapper.style.justifyContent='center'; wrapper.style.alignItems='center'; i.style.maxWidth='100%'; i.style.height='auto'; wrapper.appendChild(i); preview.innerHTML=''; preview.appendChild(wrapper); }
+
+    function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    function dataURLToBlob(dataurl){ const arr=dataurl.split(','); const mime=arr[0].match(/:(.*?);/)[1]; const bstr=atob(arr[1]); let n=bstr.length; const u8=new Uint8Array(n); while(n--)u8[n]=bstr.charCodeAt(n); return new Blob([u8],{type:mime}); }
+
+    function calculateTargetSize(){
+      if(!img) return null;
+      const ow = img.naturalWidth, oh = img.naturalHeight;
+      const m = mode.value;
+      if(m==='percent'){ const p = Number(percent.value) / 100; return {w: Math.max(1, Math.round(ow * p)), h: Math.max(1, Math.round(oh * p))}; }
+      if(m==='max'){ const max = Number(maxDim.value) || Math.max(ow,oh); const ratio = Math.min(1, max / Math.max(ow,oh)); return {w: Math.max(1, Math.round(ow * ratio)), h: Math.max(1, Math.round(oh * ratio))}; }
+      // exact
+      let w = Number(widthInput.value) || ow; let h = Number(heightInput.value) || oh;
+      if(keepAspect.checked){ const r = ow / oh; if(w && !heightInput.value){ h = Math.round(w / r); } else if(h && !widthInput.value){ w = Math.round(h * r); } }
+      return {w, h};
+    }
+
+    function resizeToBlob(type, q){
+      return new Promise((resolve,reject)=>{
+        if(!img) return reject(new Error('No image'));
+        const size = calculateTargetSize(); if(!size) return reject(new Error('Cannot calculate size'));
+        const canvas = document.createElement('canvas'); canvas.width = size.w; canvas.height = size.h; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, size.w, size.h);
+        try{ canvas.toBlob(b=>{ if(b) resolve(b); else{ try{ resolve(dataURLToBlob(canvas.toDataURL(type,q))); }catch(e){reject(e)} } }, type, q); }catch(e){ try{ resolve(dataURLToBlob(canvas.toDataURL(type,q))); }catch(err){reject(err)} }
+      })
+    }
+
+    function mimeToExt(m){ if(m==='image/jpeg') return 'jpg'; if(m==='image/png') return 'png'; if(m==='image/webp') return 'webp'; return m.split('/').pop(); }
+    function filenameWithExt(n,e){ const base = n.replace(/\.[^.]+$/,''); return base+'-'+Date.now()+'.'+e; }
+
+    // wiring
+    choose.addEventListener('click', ()=>fileInput.click());
+    fileInput.addEventListener('change', e=>handleFile(e.target.files[0]));
+    ;['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.add('drag')}));
+    ;['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();drop.classList.remove('drag')}));
+    drop.addEventListener('drop', e=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) handleFile(f); });
+    drop.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' ') { fileInput.click(); e.preventDefault(); } });
+
+    // UI interactivity
+    mode.addEventListener('change', ()=>{
+      sizeExact.style.display = mode.value==='exact' ? 'block' : 'none';
+      sizeMax.style.display = mode.value==='max' ? 'block' : 'none';
+      sizePercent.style.display = mode.value==='percent' ? 'block' : 'none';
+    });
+
+    quality.addEventListener('input', ()=> qVal.textContent = quality.value);
+
+    // presets
+    document.querySelectorAll('.preset').forEach(p=>p.addEventListener('click', ()=>{ widthInput.value = p.dataset.w; heightInput.value = p.dataset.h; mode.value='exact'; mode.dispatchEvent(new Event('change')); }));
+
+    // resize action
+    resizeBtn.addEventListener('click', async ()=>{
+      if(!img) return alert('Choose an image first');
+      resizeBtn.disabled=true; status.textContent='Resizing...';
+      try{
+        const q = Number(quality.value);
+        const blob = await resizeToBlob(outFormat.value, q);
+        lastBlob = blob;
+        downloadBtn.style.display='inline-block';
+        downloadBtn.onclick = ()=> downloadBlob(blob, filenameWithExt(file.name, mimeToExt(outFormat.value)));
+        status.textContent = 'Done — ' + bytes(blob.size) + ' (original '+bytes(file.size)+')';
+        // preview
+        const imgEl = document.createElement('img'); imgEl.src = URL.createObjectURL(blob); imgEl.onload = ()=> URL.revokeObjectURL(imgEl.src); preview.innerHTML=''; preview.appendChild(imgEl);
+      }catch(e){ alert('Error: '+(e.message||e)); }
+      finally{ resizeBtn.disabled=false }
+    });
+
+    previewBtn.addEventListener('click', async ()=>{
+      if(!img) return alert('Choose an image first'); previewBtn.disabled=true; try{ const b = await resizeToBlob(outFormat.value, Number(quality.value)); lastBlob=b; const imgEl=document.createElement('img'); imgEl.src=URL.createObjectURL(b); imgEl.onload=()=>URL.revokeObjectURL(imgEl.src); preview.innerHTML=''; preview.appendChild(imgEl); downloadBtn.style.display='inline-block'; downloadBtn.onclick=()=>downloadBlob(b, filenameWithExt(file.name, mimeToExt(outFormat.value))); info.innerHTML += '<br>Preview size: '+bytes(b.size); }catch(e){ alert('Preview error: '+e.message) } finally{ previewBtn.disabled=false }
+    });
+
+    openBtn.addEventListener('click', ()=>{ if(!lastBlob) return alert('No result yet'); const u=URL.createObjectURL(lastBlob); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),5000); });
+
+    resetBtn.addEventListener('click', ()=>{ file=null; img=null; lastBlob=null; fileInput.value=''; preview.innerHTML='<div style="padding:12px;color:var(--muted)">No image selected</div>'; info.textContent='No file'; downloadBtn.style.display='none'; status.textContent='Ready'; });
+
+    function downloadBlob(blob, name){ const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000); }
+
+    (function init(){ outFormat.dispatchEvent(new Event('change')); qVal.textContent = quality.value; })();
+  </script>
+</body>
+</html>
