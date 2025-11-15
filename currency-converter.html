@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Currency Converter — Tool i online</title>
+  <meta name="description" content="Fast, reliable currency converter using live exchange rates. Purple themed, responsive and professional." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --purple:#5E35B1; --purple-700:#4a148c; --bg:#ffffff; --muted:#666; --card-radius:12px; --shadow:0 12px 30px rgba(74,20,140,0.08); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo-mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(180deg,var(--purple),var(--purple-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.25rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .panel{padding:18px}
+    label{display:block;font-size:0.95rem;color:var(--muted);margin-bottom:6px}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type=number], select, input[type=text]{padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.08);font-size:1rem}
+
+    .amount{display:flex;gap:8px;align-items:center}
+    .big-result{font-size:1.4rem;font-weight:800;color:var(--purple-700)}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--purple);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06)}
+
+    .rate-info{font-size:0.9rem;color:var(--muted)}
+
+    .swap-btn{background:linear-gradient(90deg,var(--purple),var(--purple-700));color:#fff;border-radius:10px;padding:10px;border:none;cursor:pointer}
+
+    .history{max-height:40vh;overflow:auto;margin-top:12px}
+    .history-item{padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px;background:#faf7ff}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .logo-mark{width:44px;height:44px} }
+    @media (max-width:480px){ h1{font-size:1rem} .grid{gap:12px} .panel{padding:12px} }
+
+    :focus{outline:3px solid rgba(94,53,177,0.12)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Currency Converter</h1>
+        <p class="lead">Convert currencies using live exchange rates. Fast, responsive and private — rates fetched client-side.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="panel" aria-labelledby="converter">
+          <h2 id="converter" style="margin:0 0 8px 0;font-size:1rem">Converter</h2>
+
+          <div>
+            <label for="amount">Amount</label>
+            <div class="amount">
+              <input id="amount" type="number" min="0" step="any" value="1" aria-label="Amount to convert">
+              <select id="fromCurrency" aria-label="From currency" style="min-width:140px"></select>
+              <button id="swapBtn" class="swap-btn" title="Swap currencies" aria-label="Swap currencies"><i class="fa-solid fa-exchange-alt"></i></button>
+              <select id="toCurrency" aria-label="To currency" style="min-width:140px"></select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label for="converted">Converted</label>
+            <div class="row">
+              <div class="big-result" id="converted">—</div>
+              <div style="flex:1"></div>
+              <div class="rate-info" id="rateInfo">Rate: —</div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="convertBtn" class="btn primary"><i class="fa-solid fa-arrow-right"></i> Convert</button>
+            <button id="refreshBtn" class="btn ghost"><i class="fa-solid fa-sync"></i> Refresh Rates</button>
+            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+            <button id="shareBtn" class="btn ghost"><i class="fa-solid fa-share-nodes"></i> Share</button>
+            <div style="flex:1"></div>
+            <div class="rate-info" id="timestamp">Rates: —</div>
+          </div>
+
+          <div style="margin-top:14px">
+            <label for="searchCurrency">Quick find currency</label>
+            <input id="searchCurrency" type="text" placeholder="Search by code or name" aria-label="Search currencies">
+          </div>
+
+          <div class="small" style="margin-top:12px;color:var(--muted)">Rates provided by exchangerate.host (free, no API key). All requests are made from the user's browser — nothing is sent to your server.</div>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="history">
+          <h2 id="history" style="margin:0 0 8px 0;font-size:1rem">History & Tools</h2>
+
+          <div>
+            <div class="small">Conversion history (local)</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Options</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <label class="small"><input type="checkbox" id="autoRefresh"> Auto-refresh rates</label>
+              <label class="small"><input type="checkbox" id="useSymbols" checked> Show currency names</label>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Implementation notes:
+    // - Uses exchangerate.host free API to fetch symbols and latest rates.
+    // - Caches rates in localStorage with a TTL (1 hour) so repeated visits don't hammer API.
+    // - All requests happen client-side; no server required.
+
+    const API_BASE = 'https://api.exchangerate.host';
+    const amountEl = document.getElementById('amount');
+    const fromEl = document.getElementById('fromCurrency');
+    const toEl = document.getElementById('toCurrency');
+    const convertBtn = document.getElementById('convertBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const convertedEl = document.getElementById('converted');
+    const rateInfoEl = document.getElementById('rateInfo');
+    const timestampEl = document.getElementById('timestamp');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+    const searchCurrency = document.getElementById('searchCurrency');
+    const autoRefreshEl = document.getElementById('autoRefresh');
+    const useSymbolsEl = document.getElementById('useSymbols');
+
+    const STORAGE_RATES = 'ti_rates_v1';
+    const STORAGE_SYMBOLS = 'ti_symbols_v1';
+    const STORAGE_HISTORY = 'ti_conv_history_v1';
+
+    let symbols = {}; // code -> description
+    let ratesCache = { base: 'EUR', timestamp: 0, rates: {} };
+    const TTL_MS = 1000 * 60 * 60; // 1 hour
+
+    // Load symbols (currency list)
+    async function loadSymbols(){
+      const raw = localStorage.getItem(STORAGE_SYMBOLS);
+      if(raw){ try{ symbols = JSON.parse(raw); populateCurrencyLists(); }catch(e){ symbols = {}; }}
+      try{
+        const res = await fetch(`${API_BASE}/symbols`);
+        const j = await res.json();
+        if(j && j.symbols){ symbols = j.symbols; localStorage.setItem(STORAGE_SYMBOLS, JSON.stringify(symbols)); populateCurrencyLists(); }
+      }catch(e){ console.warn('Failed to fetch symbols', e); }
+    }
+
+    function populateCurrencyLists(filter=''){
+      const keys = Object.keys(symbols).sort();
+      const showNames = useSymbolsEl.checked;
+      const filterLc = filter.trim().toLowerCase();
+      [fromEl, toEl].forEach(sel => {
+        const cur = sel.value;
+        sel.innerHTML = '';
+        keys.forEach(code => {
+          const name = symbols[code] && symbols[code].description ? symbols[code].description : code;
+          if(filterLc && !(code.toLowerCase().includes(filterLc) || name.toLowerCase().includes(filterLc))) return;
+          const opt = document.createElement('option'); opt.value = code; opt.textContent = showNames ? `${code} — ${name}` : code;
+          sel.appendChild(opt);
+        });
+        if(keys.includes(cur)) sel.value = cur; // preserve
+      });
+    }
+
+    // Load rates from cache or network
+    async function loadRates(base='EUR', force=false){
+      const raw = localStorage.getItem(STORAGE_RATES);
+      if(raw && !force){
+        try{ const parsed = JSON.parse(raw); if(Date.now() - parsed.timestamp < TTL_MS && parsed.base === base){ ratesCache = parsed; setTimestamp(parsed.timestamp); return parsed; } }
+        catch(e){}
+      }
+      try{
+        const res = await fetch(`${API_BASE}/latest?base=${encodeURIComponent(base)}`);
+        const j = await res.json();
+        if(j && j.rates){ ratesCache = { base: j.base, timestamp: Date.now(), rates: j.rates }; localStorage.setItem(STORAGE_RATES, JSON.stringify(ratesCache)); setTimestamp(ratesCache.timestamp); return ratesCache; }
+      }catch(e){ console.warn('Failed to fetch rates', e); }
+      // fallback if cache exists
+      if(raw){ try{ const parsed = JSON.parse(raw); ratesCache = parsed; setTimestamp(parsed.timestamp); return parsed; }catch(e){} }
+      return null;
+    }
+
+    function setTimestamp(ts){ if(!ts) { timestampEl.textContent = 'Rates: —'; return; } const d = new Date(ts); timestampEl.textContent = 'Rates: ' + d.toLocaleString(); }
+
+    function convert(amount, from, to){
+      // If direct rates available when base==ratesCache.base
+      if(ratesCache && ratesCache.rates){
+        if(from === ratesCache.base){
+          const rate = ratesCache.rates[to];
+          return {value: amount * rate, rate};
+        }
+        if(to === ratesCache.base){
+          const rate = ratesCache.rates[from];
+          return {value: amount / rate, rate: 1 / rate};
+        }
+        // general: amount * (rate_to / rate_from)
+        const rFrom = ratesCache.rates[from];
+        const rTo = ratesCache.rates[to];
+        if(rFrom && rTo){ const rate = rTo / rFrom; return {value: amount * rate, rate}; }
+      }
+      return null; // caller should fetch with proper base
+    }
+
+    async function doConvert(){
+      const amount = parseFloat(amountEl.value) || 0;
+      const from = fromEl.value || 'USD';
+      const to = toEl.value || 'INR';
+      if(amount === 0){ convertedEl.textContent = '0'; return; }
+
+      // ensure symbols loaded
+      if(!symbols || Object.keys(symbols).length === 0) await loadSymbols();
+
+      // ensure rates with base that helps: prefer ratesCache.base to be something that contains from and to
+      if(!ratesCache.rates || !ratesCache.rates[from] || !ratesCache.rates[to]){
+        // try loading with base = from to get direct rate
+        await loadRates(from, true);
+      }
+
+      let res = convert(amount, from, to);
+      if(!res){
+        // try with base USD
+        await loadRates('USD', true);
+        res = convert(amount, from, to);
+      }
+      if(!res){
+        // last attempt: call convert endpoint on exchangerate.host which returns direct conversion
+        try{
+          const api = `${API_BASE}/convert?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amount)}`;
+          const r = await fetch(api);
+          const j = await r.json();
+          if(j && j.result!=null){ const value = j.result; const rate = j.info && j.info.rate ? j.info.rate : (value/amount); showConversion(amount, from, to, value, rate); saveHistory(amount, from, to, value, rate); return; }
+        }catch(e){ console.warn('convert endpoint failed', e); }
+        convertedEl.textContent = 'N/A'; rateInfoEl.textContent = 'Rate: —'; return;
+      }
+
+      showConversion(amount, from, to, res.value, res.rate);
+      saveHistory(amount, from, to, res.value, res.rate);
+    }
+
+    function showConversion(amount, from, to, value, rate){
+      const precision = value < 1 ? 6 : 2;
+      convertedEl.textContent = `${formatNumber(value, precision)} ${to}`;
+      rateInfoEl.textContent = `1 ${from} = ${formatNumber(rate, 6)} ${to}`;
+    }
+
+    function formatNumber(n, p=2){ return Number(n).toLocaleString(undefined, {minimumFractionDigits: p, maximumFractionDigits: p}); }
+
+    // History
+    function saveHistory(amount, from, to, value, rate){
+      try{
+        const raw = localStorage.getItem(STORAGE_HISTORY); const list = raw ? JSON.parse(raw) : [];
+        list.unshift({ts: Date.now(), amount, from, to, value, rate});
+        if(list.length > 50) list.pop();
+        localStorage.setItem(STORAGE_HISTORY, JSON.stringify(list)); renderHistory();
+      }catch(e){console.warn(e);}    }
+
+    function renderHistory(){
+      const raw = localStorage.getItem(STORAGE_HISTORY); const list = raw ? JSON.parse(raw) : [];
+      historyList.innerHTML = '';
+      if(!list.length){ historyList.innerHTML = '<div class="small">No recent conversions</div>'; return; }
+      list.forEach(item =>{
+        const d = new Date(item.ts);
+        const el = document.createElement('div'); el.className = 'history-item';
+        el.innerHTML = `<div style="font-weight:700">${formatNumber(item.amount,2)} ${item.from} → ${formatNumber(item.value, item.value<1?6:2)} ${item.to}</div><div class="small">Rate: ${formatNumber(item.rate,6)} · ${d.toLocaleString()}</div>`;
+        el.addEventListener('click', ()=>{ amountEl.value = item.amount; fromEl.value = item.from; toEl.value = item.to; doConvert(); });
+        historyList.appendChild(el);
+      });
+    }
+
+    // UI bindings
+    convertBtn.addEventListener('click', doConvert);
+    swapBtn.addEventListener('click', ()=>{ const a = fromEl.value; fromEl.value = toEl.value; toEl.value = a; doConvert(); });
+    refreshBtn.addEventListener('click', async ()=>{ await loadRates(fromEl.value || 'USD', true); alert('Rates refreshed'); });
+
+    copyBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(convertedEl.textContent || ''); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000);}catch(e){ alert('Copy failed'); }
+    });
+
+    shareBtn.addEventListener('click', ()=>{
+      const txt = convertedEl.textContent + ' (rate: ' + rateInfoEl.textContent + ')';
+      if(navigator.share){ navigator.share({text: txt}).catch(()=>{}); } else { navigator.clipboard.writeText(txt).then(()=> alert('Copied to clipboard')); }
+    });
+
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear conversion history?')){ localStorage.removeItem(STORAGE_HISTORY); renderHistory(); } });
+    exportHistoryBtn.addEventListener('click', ()=>{
+      const raw = localStorage.getItem(STORAGE_HISTORY) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'conversion-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    // search currencies
+    searchCurrency.addEventListener('input', ()=> populateCurrencyLists(searchCurrency.value));
+    useSymbolsEl.addEventListener('change', ()=> populateCurrencyLists(searchCurrency.value));
+
+    // Auto-refresh
+    let autoInterval = null;
+    autoRefreshEl.addEventListener('change', ()=>{
+      if(autoRefreshEl.checked){ autoInterval = setInterval(()=> loadRates(fromEl.value || 'USD', true), 1000*60*30); } else { if(autoInterval) clearInterval(autoInterval); }
+    });
+
+    // helpers init
+    function initDefaults(){
+      // fill dropdowns once symbols loaded
+      fromEl.innerHTML = '<option>USD</option>'; toEl.innerHTML = '<option>INR</option>';
+    }
+
+    // Initialization
+    (async function init(){
+      initDefaults();
+      await loadSymbols();
+      // set sensible defaults
+      fromEl.value = 'USD'; toEl.value = 'INR';
+      // load initial rates with base = USD
+      await loadRates('USD', false);
+      renderHistory();
+      setTimestamp(ratesCache.timestamp);
+      // initial convert
+      doConvert();
+    })();
+
+  </script>
+</body>
+</html>
