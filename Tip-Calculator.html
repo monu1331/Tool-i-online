@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tip Calculator — Tool i online</title>
+  <meta name="description" content="Quick, accurate tip calculator with split and rounding options. Professional, responsive purple-themed UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --purple:#5E35B1; --purple-700:#4a148c; --bg:#fff; --muted:#6b6b6b; --card-radius:12px; --shadow:0 10px 30px rgba(46,22,56,0.06); --maxw:900px; --gap:12px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:linear-gradient(180deg,var(--purple),var(--purple-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+
+    .editor{padding:18px;display:flex;flex-direction:column;gap:14px}
+    label{font-size:0.95rem;color:var(--muted)}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type=number], input[type=text]{padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem}
+
+    .presets{display:flex;gap:8px;flex-wrap:wrap}
+    .preset{padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;font-weight:700;background:#fff}
+    .preset.active{background:linear-gradient(180deg,var(--purple),var(--purple-700));color:#fff}
+
+    .options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .chip{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:#fff}
+
+    /* result panel */
+    .panel{padding:18px;border-left:1px solid rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:12px}
+    .amount{font-size:1.6rem;font-weight:800;color:var(--purple-700)}
+    .label-muted{color:var(--muted);font-size:0.95rem}
+    .summary{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:#fbf7ff;border:1px solid rgba(94,53,177,0.03)}
+
+    .actions{display:flex;gap:8px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--purple);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06)}
+
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .panel{border-left:none;border-top:1px solid rgba(0,0,0,0.04)} }
+    @media (max-width:480px){ .logo-mark{width:40px;height:40px} .presets{gap:6px} input[type=number]{width:100%} }
+
+    /* focus-visible */
+    :focus{outline:3px solid rgba(94,53,177,0.12)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Tip Calculator</h1>
+        <p class="lead">Calculate tip quickly, split the bill and round results. Theme: purple.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="editor" aria-labelledby="editor-title">
+          <h2 id="editor-title" style="margin:0;font-size:1rem">Calculator</h2>
+
+          <div>
+            <label for="bill">Bill amount</label>
+            <div style="margin-top:8px" class="row">
+              <span class="small" style="margin-right:8px">₹</span>
+              <input id="bill" type="number" min="0" step="0.01" placeholder="0.00" aria-label="Bill amount" />
+            </div>
+          </div>
+
+          <div>
+            <label>Tip %</label>
+            <div class="presets" id="presetButtons" style="margin-top:8px">
+              <button class="preset" data-tip="5">5%</button>
+              <button class="preset" data-tip="10">10%</button>
+              <button class="preset" data-tip="15">15%</button>
+              <button class="preset" data-tip="18">18%</button>
+              <button class="preset" data-tip="20">20%</button>
+            </div>
+            <div style="margin-top:8px" class="row">
+              <input id="customTip" type="number" min="0" step="0.1" placeholder="Custom %" aria-label="Custom tip percent" />
+              <div class="small">or enter custom tip</div>
+            </div>
+          </div>
+
+          <div>
+            <label for="people">Split between (people)</label>
+            <div style="margin-top:8px" class="row">
+              <input id="people" type="number" min="1" step="1" value="1" aria-label="Number of people" style="width:110px" />
+              <div class="small">Set to 1 for single payer</div>
+            </div>
+          </div>
+
+          <div>
+            <label>Rounding</label>
+            <div class="options" style="margin-top:8px">
+              <label class="chip"><input type="radio" name="round" value="none" checked> No rounding</label>
+              <label class="chip"><input type="radio" name="round" value="tip"> Round tip up</label>
+              <label class="chip"><input type="radio" name="round" value="total"> Round total up</label>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+            <button id="calcBtn" class="btn primary"><i class="fa-solid fa-calculator"></i> Calculate</button>
+            <button id="resetBtn" class="btn ghost"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            <div style="flex:1"></div>
+            <div class="small" id="lastUpdated"></div>
+          </div>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="result-title">
+          <h2 id="result-title" style="margin:0;font-size:1rem">Summary</h2>
+
+          <div class="summary" aria-live="polite">
+            <div>
+              <div class="label-muted">Tip amount</div>
+              <div class="amount" id="tipAmount">₹0.00</div>
+            </div>
+            <div style="text-align:right">
+              <div class="label-muted">Tip %</div>
+              <div id="displayTip" style="font-weight:700">0%</div>
+            </div>
+          </div>
+
+          <div class="summary">
+            <div>
+              <div class="label-muted">Total (bill + tip)</div>
+              <div class="amount" id="totalAmount">₹0.00</div>
+            </div>
+            <div style="text-align:right">
+              <div class="label-muted">Per person</div>
+              <div id="perPerson" style="font-weight:700">₹0.00</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+            <div class="small">Share or copy results</div>
+            <div class="actions">
+              <button id="copyBtn" class="btn ghost" title="Copy results"><i class="fa-solid fa-copy"></i></button>
+              <button id="shareBtn" class="btn primary" title="Share results"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+          </div>
+
+          <div class="small">Tip Calculator — All calculations happen locally in your browser. No data is uploaded.</div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const billEl = document.getElementById('bill');
+    const presetButtons = document.getElementById('presetButtons');
+    const customTipEl = document.getElementById('customTip');
+    const peopleEl = document.getElementById('people');
+    const calcBtn = document.getElementById('calcBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const tipAmountEl = document.getElementById('tipAmount');
+    const totalAmountEl = document.getElementById('totalAmount');
+    const perPersonEl = document.getElementById('perPerson');
+    const displayTipEl = document.getElementById('displayTip');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+
+    // Helpers
+    function toCurrency(n){ return '₹' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function nowString(){ return new Date().toLocaleString(); }
+
+    // preset click
+    presetButtons.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-tip]');
+      if(!btn) return;
+      // toggle active
+      presetButtons.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      const tip = Number(btn.dataset.tip);
+      customTipEl.value = '';
+      customTipEl.placeholder = tip;
+      displayTipEl.textContent = tip + '%';
+    });
+
+    // custom tip input clear presets
+    customTipEl.addEventListener('input', ()=>{
+      presetButtons.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+      const v = parseFloat(customTipEl.value);
+      if(!Number.isNaN(v)) displayTipEl.textContent = v + '%';
+      else displayTipEl.textContent = '—';
+    });
+
+    function getSelectedTip(){
+      const active = presetButtons.querySelector('.preset.active');
+      if(active) return Number(active.dataset.tip);
+      const v = parseFloat(customTipEl.value);
+      return Number.isFinite(v) ? v : 0;
+    }
+
+    function getRoundingMode(){
+      const r = document.querySelector('input[name="round"]:checked');
+      return r ? r.value : 'none';
+    }
+
+    function calculate(){
+      const bill = parseFloat(billEl.value) || 0;
+      const tipPct = getSelectedTip();
+      const people = Math.max(1, parseInt(peopleEl.value) || 1);
+      let tip = bill * (tipPct/100);
+      let total = bill + tip;
+      const rounding = getRoundingMode();
+      if(rounding === 'tip'){
+        tip = Math.ceil(tip);
+        total = bill + tip;
+      } else if(rounding === 'total'){
+        total = Math.ceil(total);
+        tip = total - bill;
+      }
+      const per = total / people;
+
+      tipAmountEl.textContent = toCurrency(tip);
+      totalAmountEl.textContent = toCurrency(total);
+      perPersonEl.textContent = toCurrency(per);
+      displayTipEl.textContent = tipPct + '%';
+      lastUpdatedEl.textContent = 'Calculated: ' + nowString();
+
+      // store last result in history (localStorage small cache)
+      const last = {bill, tipPct, tip, total, per, people, when: Date.now()};
+      try{ localStorage.setItem('ti_tip_last', JSON.stringify(last)); }catch(e){ /* ignore */ }
+    }
+
+    calcBtn.addEventListener('click', calculate);
+
+    resetBtn.addEventListener('click', ()=>{
+      billEl.value = '';
+      customTipEl.value = '';
+      peopleEl.value = 1;
+      presetButtons.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+      tipAmountEl.textContent = '₹0.00'; totalAmountEl.textContent = '₹0.00'; perPersonEl.textContent = '₹0.00'; displayTipEl.textContent = '0%'; lastUpdatedEl.textContent = '';
+      try{ localStorage.removeItem('ti_tip_last'); }catch(e){}
+    });
+
+    // copy/share
+    copyBtn.addEventListener('click', async ()=>{
+      const text = `Tip: ${tipAmountEl.textContent}\nTotal: ${totalAmountEl.textContent}\nPer person: ${perPersonEl.textContent}`;
+      try{ await navigator.clipboard.writeText(text); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i>',1000); }catch(e){ alert('Copy failed'); }
+    });
+
+    shareBtn.addEventListener('click', ()=>{
+      const data = {text: `Bill: ${billEl.value || '0'}\nTip: ${tipAmountEl.textContent}\nTotal: ${totalAmountEl.textContent}\nPer: ${perPersonEl.textContent}`};
+      if(navigator.share){ navigator.share(data).catch(()=> alert('Share canceled')); }
+      else{ alert('Share not available — copy results instead'); }
+    });
+
+    // load last cached
+    (function loadLast(){ try{ const raw = localStorage.getItem('ti_tip_last'); if(raw){ const s = JSON.parse(raw); billEl.value = s.bill; customTipEl.value = s.tipPct; peopleEl.value = s.people; calculate(); } }catch(e){} })();
+
+    // accessibility: Enter on bill or customTip triggers calculation
+    [billEl, customTipEl, peopleEl].forEach(el=> el.addEventListener('keydown', (e)=>{ if(e.key==='Enter') calculate(); }));
+
+    // small UX: allow preset via keyboard
+    document.addEventListener('keydown', (e)=>{ if(['1','2','3','4','5'].includes(e.key)){ const idx = parseInt(e.key)-1; const btns = presetButtons.querySelectorAll('.preset'); if(btns[idx]) btns[idx].click(); } });
+
+  </script>
+</body>
+</html>
