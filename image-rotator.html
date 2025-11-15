@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Rotator & Flipper — Tool i online</title>
+  <meta name="description" content="Rotate, flip and download images quickly — professional, responsive Image Rotator & Flipper tool themed in red." />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --red: #D32F2F;
+      --red-600: #c62828;
+      --bg: #ffffff;
+      --muted: #6b6b6b;
+      --radius: 12px;
+      --shadow: 0 8px 20px rgba(19,19,21,0.08);
+      --max-width: 1100px;
+      --gutter: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#222}
+
+    .wrap{max-width:var(--max-width);margin:28px auto;padding:20px}
+
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .logo-mark{width:48px;height:48px;border-radius:10px;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;box-shadow:var(--shadow)}
+    h1{font-size:1.4rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .tool-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:var(--gutter)}
+
+    /* Left: canvas & controls */
+    .editor{padding:18px;display:flex;flex-direction:column;gap:14px}
+    .dropzone{border:2px dashed rgba(0,0,0,0.06);border-radius:10px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:220px;background:linear-gradient(180deg, rgba(210,47,47,0.03), transparent)}
+    .dropzone.dragover{border-color:var(--red);background:linear-gradient(180deg, rgba(211,47,47,0.06), rgba(211,47,47,0.02))}
+    .dropzone .hint{color:var(--muted);font-size:0.95rem;text-align:center}
+
+    canvas{max-width:100%;border-radius:8px;background:#f8f8f8;display:block;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+
+    .controls{display:flex;flex-wrap:wrap;gap:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--red);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06);color:#333}
+    .btn:focus{outline:3px solid rgba(211,47,47,0.15)}
+
+    .slider-row{display:flex;align-items:center;gap:12px}
+    .slider-row input[type='range']{width:100%}
+    .meta{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:0.95rem}
+
+    /* Right: tool panel */
+    .panel{padding:18px;border-left:1px solid rgba(0,0,0,0.03);display:flex;flex-direction:column;gap:12px}
+    .panel h3{margin:0;font-size:1.05rem}
+    .panel .row{display:flex;flex-direction:column;gap:8px}
+    .panel label{font-size:0.9rem;color:var(--muted)}
+    .options{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:#fff;font-weight:600}
+
+    .download-note{color:var(--muted);font-size:0.9rem}
+
+    footer.small{margin-top:12px;color:var(--muted);font-size:0.9rem}
+
+    /* responsive */
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr}
+      .panel{border-left:none;border-top:1px solid rgba(0,0,0,0.03)}
+    }
+
+    @media (max-width:480px){
+      .logo-mark{width:40px;height:40px;font-size:16px}
+      .wrap{padding:12px}
+      .dropzone{min-height:160px;padding:12px}
+      .btn{padding:10px}
+    }
+
+    /* Accessibility: focus-visible */
+    :focus:not(:focus-visible){outline:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <div class="logo-mark">Ti</div>
+        <div>
+          <h1>Image Rotator & Flipper</h1>
+          <p class="lead">Rotate, flip and export images — fast, private and responsive. Theme: red.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="tool-card">
+      <div class="grid">
+        <section class="editor" aria-labelledby="editor-title">
+          <h2 id="editor-title" style="font-size:1rem;margin:0">Editor</h2>
+
+          <div id="dropzone" class="dropzone" tabindex="0" aria-label="Drop image here or click to upload">
+            <input id="fileInput" type="file" accept="image/*" style="display:none">
+            <div class="hint">
+              <p style="margin:0"><strong>Drop an image</strong> here or <button id="browseBtn" class="btn ghost" type="button">Browse</button></p>
+              <p style="margin:6px 0 0;color:var(--muted);font-size:0.95rem">Supports JPEG, PNG, WebP. Images are processed locally in your browser.</p>
+            </div>
+          </div>
+
+          <canvas id="canvas" role="img" aria-label="Image preview" style="display:none"></canvas>
+
+          <div class="controls" aria-hidden="false">
+            <button class="btn primary" id="rotateLeft" title="Rotate 90° left"><i class="fa-solid fa-rotate-left"></i>Rotate Left</button>
+            <button class="btn primary" id="rotateRight" title="Rotate 90° right"><i class="fa-solid fa-rotate-right"></i>Rotate Right</button>
+            <button class="btn ghost" id="flipH" title="Flip Horizontal"><i class="fa-solid fa-arrows-left-right"></i>Flip H</button>
+            <button class="btn ghost" id="flipV" title="Flip Vertical"><i class="fa-solid fa-arrows-up-down"></i>Flip V</button>
+            <button class="btn ghost" id="resetBtn" title="Reset transformations"><i class="fa-solid fa-undo"></i>Reset</button>
+            <button class="btn primary" id="downloadBtn" title="Download transformed image"><i class="fa-solid fa-download"></i>Download</button>
+          </div>
+
+          <div class="slider-row">
+            <label for="freeRotate" style="min-width:78px;color:var(--muted)">Rotate</label>
+            <input id="freeRotate" type="range" min="-180" max="180" value="0" step="1" aria-label="Free rotation slider">
+            <div class="meta"><span id="angle">0°</span></div>
+          </div>
+
+          <div class="meta">
+            <div id="dimensions">Width: -  Height: -</div>
+            <div id="filesize"></div>
+          </div>
+
+          <p class="download-note">Tip: For the highest-quality download, use PNG or original format when prompted.</p>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="panel-title">
+          <h3 id="panel-title">Options & Info</h3>
+          <div class="row">
+            <label>Output format</label>
+            <div class="options">
+              <button class="chip" data-format="png">PNG</button>
+              <button class="chip" data-format="jpeg">JPEG</button>
+              <button class="chip" data-format="webp">WebP</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Rotate steps</label>
+            <div class="options">
+              <button class="chip" id="step90">90°</button>
+              <button class="chip" id="step45">45°</button>
+              <button class="chip" id="step15">15°</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Image details</label>
+            <div id="infoList" style="color:var(--muted);font-size:0.95rem">No image loaded</div>
+          </div>
+
+          <div class="row">
+            <label>Accessibility</label>
+            <div style="color:var(--muted);font-size:0.9rem">Keyboard: Tab to controls. Press Enter/Space on buttons. Drag-and-drop supported.</div>
+          </div>
+
+          <footer class="small">Processed locally — we do not upload your images.</footer>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const browseBtn = document.getElementById('browseBtn');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const rotateLeft = document.getElementById('rotateLeft');
+    const rotateRight = document.getElementById('rotateRight');
+    const flipH = document.getElementById('flipH');
+    const flipV = document.getElementById('flipV');
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const freeRotate = document.getElementById('freeRotate');
+    const angleLabel = document.getElementById('angle');
+    const dimensions = document.getElementById('dimensions');
+    const filesize = document.getElementById('filesize');
+    const infoList = document.getElementById('infoList');
+
+    // State
+    let img = new Image();
+    let originalBlob = null;
+    let rotation = 0; // degrees
+    let flipX = false;
+    let flipY = false;
+
+    let currentFormat = 'png';
+    const chips = document.querySelectorAll('.chip[data-format]');
+    chips.forEach(c => c.addEventListener('click', () => {
+      chips.forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      currentFormat = c.dataset.format;
+    }));
+    // default active
+    document.querySelector('.chip[data-format="png"]').classList.add('active');
+
+    // Step buttons
+    document.getElementById('step90').addEventListener('click', () => stepRotate(90));
+    document.getElementById('step45').addEventListener('click', () => stepRotate(45));
+    document.getElementById('step15').addEventListener('click', () => stepRotate(15));
+
+    function stepRotate(deg){
+      rotation = (rotation + deg) % 360;
+      freeRotate.value = rotation;
+      update();
+    }
+
+    // Drag & drop
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+      e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover');
+    }));
+
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+      e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover');
+    }));
+
+    dropzone.addEventListener('drop', e => {
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if(file) handleFile(file);
+    });
+
+    // Click to browse
+    browseBtn.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if(f) handleFile(f);
+      fileInput.value = '';
+    });
+
+    // keyboard support for dropzone
+    dropzone.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' ') { fileInput.click(); e.preventDefault(); }
+    });
+
+    function handleFile(file){
+      if(!file.type.startsWith('image/')){ alert('Please upload an image file'); return }
+      originalBlob = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        img = new Image();
+        img.onload = () => {
+          rotation = 0; flipX = false; flipY = false; freeRotate.value = 0; angleLabel.textContent = '0°';
+          renderToCanvas();
+          updateInfo(file);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function updateInfo(file){
+      infoList.textContent = '';
+      const list = document.createElement('div');
+      list.innerHTML = `<div>File: ${escapeHtml(file.name)}</div><div>Type: ${file.type}</div><div>Size: ${formatBytes(file.size)}</div>`;
+      infoList.appendChild(list);
+    }
+
+    function renderToCanvas(){
+      if(!img || !img.src) return;
+      // compute rotation in radians
+      const angle = (rotation + parseFloat(freeRotate.value || 0)) * Math.PI/180;
+
+      // compute bounding box after rotation
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const cos = Math.abs(Math.cos(angle));
+      const sin = Math.abs(Math.sin(angle));
+      const boundingW = Math.round(w * cos + h * sin);
+      const boundingH = Math.round(w * sin + h * cos);
+
+      // set canvas pixel size (limit to avoid huge canvases in browser)
+      const maxPixels = 4000; // max width or height to keep responsive
+      let targetW = boundingW;
+      let targetH = boundingH;
+      const scale = Math.min(1, maxPixels / Math.max(targetW, targetH));
+      targetW = Math.round(targetW * scale);
+      targetH = Math.round(targetH * scale);
+
+      canvas.width = targetW;
+      canvas.height = targetH;
+
+      // clear
+      ctx.save();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // move origin to center
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.rotate(angle);
+      // apply flips
+      ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+
+      // draw image centered and scaled appropriately
+      // compute scale factor to fit original image into rotated bounding box
+      const fitScale = Math.min(canvas.width / (w * (cos + sin)), canvas.height / (h * (cos + sin))) || 1;
+      // better: scale to fit within canvas maintaining DPI
+      const drawScale = Math.min(canvas.width / boundingW, canvas.height / boundingH) * (1/scale);
+
+      const drawW = w * drawScale;
+      const drawH = h * drawScale;
+
+      ctx.drawImage(img, -drawW/2, -drawH/2, drawW, drawH);
+      ctx.restore();
+
+      // update UI
+      canvas.style.display = '';
+      dimensions.textContent = `Width: ${canvas.width}px  Height: ${canvas.height}px`;
+      filesize.textContent = originalBlob ? `Original: ${formatBytes(originalBlob.size)}` : '';
+      angleLabel.textContent = `${Math.round(rotation + parseFloat(freeRotate.value || 0))}°`;
+    }
+
+    // Helpers
+    function formatBytes(bytes){
+      if(bytes < 1024) return bytes + ' B';
+      const kb = bytes/1024;
+      if(kb < 1024) return kb.toFixed(1) + ' KB';
+      const mb = kb/1024; return mb.toFixed(2) + ' MB';
+    }
+    function escapeHtml(s){ return s.replace(/[&<>\"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":"&#39;"}[c] }) }
+
+    // Controls
+    rotateLeft.addEventListener('click', () => { rotation = (rotation - 90) % 360; freeRotate.value = parseInt(freeRotate.value) + -90; update(); });
+    rotateRight.addEventListener('click', () => { rotation = (rotation + 90) % 360; freeRotate.value = parseInt(freeRotate.value) + 90; update(); });
+    flipH.addEventListener('click', () => { flipX = !flipX; update(); flipH.classList.toggle('active', flipX); });
+    flipV.addEventListener('click', () => { flipY = !flipY; update(); flipV.classList.toggle('active', flipY); });
+    resetBtn.addEventListener('click', () => { rotation = 0; flipX = false; flipY = false; freeRotate.value = 0; update(); });
+    freeRotate.addEventListener('input', () => { angleLabel.textContent = `${freeRotate.value}°`; update(); });
+
+    function update(){ renderToCanvas(); }
+
+    // Download
+    downloadBtn.addEventListener('click', async () => {
+      if(!canvas.width) { alert('No image loaded'); return }
+      // Create a temporary canvas at full quality using original image size
+      const angleRad = (rotation + parseFloat(freeRotate.value || 0)) * Math.PI/180;
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      const cos = Math.abs(Math.cos(angleRad));
+      const sin = Math.abs(Math.sin(angleRad));
+      const boundingW = Math.round(w * cos + h * sin);
+      const boundingH = Math.round(w * sin + h * cos);
+
+      const tmp = document.createElement('canvas');
+      tmp.width = boundingW;
+      tmp.height = boundingH;
+      const tctx = tmp.getContext('2d');
+
+      tctx.save();
+      tctx.translate(tmp.width/2, tmp.height/2);
+      tctx.rotate(angleRad);
+      tctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+      // draw at original size centered
+      tctx.drawImage(img, -w/2, -h/2, w, h);
+      tctx.restore();
+
+      // convert to blob
+      const mime = currentFormat === 'jpeg' ? 'image/jpeg' : currentFormat === 'webp' ? 'image/webp' : 'image/png';
+      tmp.toBlob(blob => {
+        if(!blob){ alert('Failed to create image.'); return }
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        const ext = currentFormat === 'jpeg' ? 'jpg' : currentFormat;
+        const filename = (originalBlob && originalBlob.name) ? (originalBlob.name.replace(/\.[^/.]+$/, '') + `-rotated.${ext}`) : `rotated-image.${ext}`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }, mime, 0.95);
+    });
+
+    // initial render guard
+    function safeRenderLoop(){ if(img && img.src){ renderToCanvas(); } requestAnimationFrame(safeRenderLoop); }
+    safeRenderLoop();
+
+    // Utilities: keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if(e.ctrlKey || e.metaKey) return; // avoid interfering
+      if(e.key === 'ArrowLeft') { rotation = (rotation - 15) % 360; freeRotate.value = parseInt(freeRotate.value) - 15; update(); }
+      if(e.key === 'ArrowRight') { rotation = (rotation + 15) % 360; freeRotate.value = parseInt(freeRotate.value) + 15; update(); }
+      if(e.key === 'f') { flipX = !flipX; update(); }
+      if(e.key === 'v') { flipY = !flipY; update(); }
+    });
+
+  </script>
+</body>
+</html>
