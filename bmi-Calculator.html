@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BMI Calculator — Tool i online</title>
+  <meta name="description" content="Calculate BMI (Body Mass Index) with metric and imperial units. Professional responsive BMI Calculator with purple theme." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --purple:#5E35B1; --purple-700:#4a148c; --bg:#ffffff; --muted:#666; --card-radius:12px; --shadow:0 12px 30px rgba(74,20,140,0.08); --maxw:980px; --gap:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:linear-gradient(180deg,var(--purple),var(--purple-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+
+    .editor{padding:18px;display:flex;flex-direction:column;gap:12px}
+    label{font-size:0.95rem;color:var(--muted)}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type=number], select{padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem}
+
+    .units{display:flex;gap:8px}
+    .unit-btn{padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);cursor:pointer;background:#fff;font-weight:700}
+    .unit-btn.active{background:linear-gradient(180deg,var(--purple),var(--purple-700));color:#fff;border-color:var(--purple)}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--purple);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06)}
+
+    .panel{padding:18px;border-left:1px solid rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:12px}
+    .bmi-value{font-size:2rem;font-weight:800;color:var(--purple-700)}
+    .bmi-category{font-size:1rem;font-weight:700}
+    .advice{color:var(--muted);font-size:0.95rem}
+
+    .meter{height:12px;border-radius:999px;background:#f1eef9;overflow:hidden}
+    .meter > i{display:block;height:100%;}
+    .meter-labels{display:flex;justify-content:space-between;font-size:0.85rem;color:var(--muted)}
+
+    .history-list{max-height:40vh;overflow:auto}
+    .history-item{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px;background:#fff}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .panel{border-left:none;border-top:1px solid rgba(0,0,0,0.03)} }
+    @media (max-width:480px){ .logo-mark{width:40px;height:40px} }
+
+    /* accessibility */
+    button:focus, input:focus, select:focus{outline:3px solid rgba(94,53,177,0.12)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>BMI Calculator</h1>
+        <p class="lead">Compute Body Mass Index (BMI) with Metric or Imperial units. Get category, quick advice and save results locally. Theme: purple.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="editor" aria-labelledby="editor-title">
+          <h2 id="editor-title" style="margin:0;font-size:1rem">Inputs</h2>
+
+          <div>
+            <label>Units</label>
+            <div class="units" style="margin-top:8px">
+              <button class="unit-btn active" data-unit="metric">Metric (kg, cm)</button>
+              <button class="unit-btn" data-unit="imperial">Imperial (lb, in)</button>
+            </div>
+          </div>
+
+          <div id="metricInputs" style="margin-top:6px">
+            <label for="weightKg">Weight (kg)</label>
+            <div class="row" style="margin-top:8px">
+              <input id="weightKg" type="number" min="0" step="0.1" placeholder="e.g. 70.0" aria-label="Weight in kilograms">
+            </div>
+
+            <label for="heightCm">Height (cm)</label>
+            <div class="row" style="margin-top:8px">
+              <input id="heightCm" type="number" min="0" step="0.1" placeholder="e.g. 175" aria-label="Height in centimeters">
+            </div>
+          </div>
+
+          <div id="imperialInputs" style="display:none;margin-top:6px">
+            <label for="weightLb">Weight (lb)</label>
+            <div class="row" style="margin-top:8px">
+              <input id="weightLb" type="number" min="0" step="0.1" placeholder="e.g. 154" aria-label="Weight in pounds">
+            </div>
+
+            <label for="heightIn">Height (in)</label>
+            <div class="row" style="margin-top:8px">
+              <input id="heightIn" type="number" min="0" step="0.1" placeholder="e.g. 69" aria-label="Height in inches">
+            </div>
+          </div>
+
+          <div>
+            <label>Age & Sex (optional)</label>
+            <div class="row" style="margin-top:8px">
+              <input id="age" type="number" min="0" max="120" placeholder="Age" style="width:100px">
+              <select id="sex" aria-label="Sex">
+                <option value="unspecified">Prefer not to say</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:8px" class="controls">
+            <button id="calcBtn" class="btn primary"><i class="fa-solid fa-calculator"></i> Calculate BMI</button>
+            <button id="saveBtn" class="btn ghost"><i class="fa-solid fa-save"></i> Save</button>
+            <button id="resetBtn" class="btn ghost"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            <div style="flex:1"></div>
+            <button id="shareBtn" class="btn primary"><i class="fa-solid fa-share-nodes"></i> Share</button>
+          </div>
+
+          <div class="small">Tip: BMI is a screening tool — it doesn't measure body fat directly. For personalized health advice consult a professional.</div>
+        </section>
+
+        <aside class="panel" aria-labelledby="result-title">
+          <h2 id="result-title" style="margin:0;font-size:1rem">Result</h2>
+
+          <div>
+            <div class="label-muted">Your BMI</div>
+            <div class="bmi-value" id="bmiValue">—</div>
+            <div class="bmi-category" id="bmiCategory">—</div>
+          </div>
+
+          <div>
+            <div class="meter" aria-hidden="true" style="margin-top:8px">
+              <i id="meterBar" style="width:0%;background:linear-gradient(90deg,#8e24aa,#5E35B1);"></i>
+            </div>
+            <div class="meter-labels">
+              <span>Underweight</span><span>Normal</span><span>Overweight</span><span>Obese</span>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="margin:8px 0 6px">Quick guidance</h3>
+            <div class="advice" id="adviceText">—</div>
+          </div>
+
+          <div>
+            <h3 style="margin:8px 0 6px">Saved results</h3>
+            <div class="history-list" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear history</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const unitBtns = document.querySelectorAll('.unit-btn');
+    const metricInputs = document.getElementById('metricInputs');
+    const imperialInputs = document.getElementById('imperialInputs');
+    const weightKg = document.getElementById('weightKg');
+    const heightCm = document.getElementById('heightCm');
+    const weightLb = document.getElementById('weightLb');
+    const heightIn = document.getElementById('heightIn');
+    const ageEl = document.getElementById('age');
+    const sexEl = document.getElementById('sex');
+
+    const calcBtn = document.getElementById('calcBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const shareBtn = document.getElementById('shareBtn');
+
+    const bmiValueEl = document.getElementById('bmiValue');
+    const bmiCategoryEl = document.getElementById('bmiCategory');
+    const adviceTextEl = document.getElementById('adviceText');
+    const meterBar = document.getElementById('meterBar');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+
+    let unit = 'metric';
+    const STORAGE_KEY = 'ti_bmi_history_v1';
+
+    // Unit switching
+    unitBtns.forEach(btn => btn.addEventListener('click', ()=>{
+      unitBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      unit = btn.dataset.unit;
+      metricInputs.style.display = unit === 'metric' ? '' : 'none';
+      imperialInputs.style.display = unit === 'imperial' ? '' : 'none';
+    }));
+
+    function calculateBMI(){
+      let bmi = null;
+      if(unit === 'metric'){
+        const w = parseFloat(weightKg.value);
+        const h = parseFloat(heightCm.value);
+        if(!w || !h){ alert('Please enter weight and height'); return null; }
+        const heightM = h / 100;
+        bmi = w / (heightM * heightM);
+      } else {
+        const w = parseFloat(weightLb.value);
+        const h = parseFloat(heightIn.value);
+        if(!w || !h){ alert('Please enter weight and height'); return null; }
+        bmi = (w / (h * h)) * 703;
+      }
+      bmi = Number(bmi.toFixed(1));
+      return bmi;
+    }
+
+    function categoryForBMI(bmi){
+      if(bmi < 18.5) return {cat: 'Underweight', advice: 'You are below the healthy weight range. Consider a balanced diet and consult a health professional if concerned.'};
+      if(bmi < 25) return {cat: 'Normal weight', advice: 'Great — your BMI is in the healthy range. Maintain a balanced diet and regular activity.'};
+      if(bmi < 30) return {cat: 'Overweight', advice: 'You are above the healthy weight range. Consider lifestyle adjustments (diet/exercise) and talk to a professional.'};
+      return {cat: 'Obese', advice: 'BMI indicates obesity. It is recommended to seek personalized medical advice for assessment and management.'};
+    }
+
+    function updateMeter(bmi){
+      // map typical BMI range 12..40 to 0..100
+      const min = 12; const max = 40;
+      const pct = Math.max(0, Math.min(100, ((bmi - min) / (max - min)) * 100));
+      meterBar.style.width = pct + '%';
+      // color gradient depending on category
+      if(bmi < 18.5) meterBar.style.background = 'linear-gradient(90deg,#29b6f6,#1e88e5)';
+      else if(bmi < 25) meterBar.style.background = 'linear-gradient(90deg,#66bb6a,#43a047)';
+      else if(bmi < 30) meterBar.style.background = 'linear-gradient(90deg,#ffb74d,#fb8c00)';
+      else meterBar.style.background = 'linear-gradient(90deg,#ef5350,#e53935)';
+    }
+
+    function renderResult(bmi){
+      if(bmi === null){ bmiValueEl.textContent = '—'; bmiCategoryEl.textContent = '—'; adviceTextEl.textContent = '—'; meterBar.style.width = '0%'; return; }
+      bmiValueEl.textContent = bmi.toFixed(1);
+      const info = categoryForBMI(bmi);
+      bmiCategoryEl.textContent = info.cat;
+      adviceTextEl.textContent = info.advice;
+      updateMeter(bmi);
+    }
+
+    function saveResult(bmi){
+      if(bmi === null) return;
+      const record = {
+        id: Date.now(), unit, bmi, age: ageEl.value || null, sex: sexEl.value || null, weight: unit==='metric'?weightKg.value:weightLb.value, height: unit==='metric'?heightCm.value:heightIn.value, when: new Date().toISOString()
+      };
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift(record);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      historyList.innerHTML = '';
+      if(!list.length){ historyList.innerHTML = '<div class="small">No saved results</div>'; return; }
+      list.forEach(r => {
+        const el = document.createElement('div'); el.className = 'history-item';
+        el.innerHTML = `<div style="font-weight:700">BMI: ${r.bmi.toFixed(1)} — ${r.unit === 'metric' ? 'kg/cm' : 'lb/in'}</div><div class="small">When: ${new Date(r.when).toLocaleString()}</div>`;
+        el.addEventListener('click', ()=>{ // load into result panel
+          renderResult(r.bmi);
+        });
+        historyList.appendChild(el);
+      });
+    }
+
+    calcBtn.addEventListener('click', ()=>{
+      const bmi = calculateBMI();
+      if(bmi === null) return;
+      renderResult(bmi);
+      lastComputed = bmi;
+    });
+
+    saveBtn.addEventListener('click', ()=>{
+      const bmi = Number(bmiValueEl.textContent);
+      if(!bmi || isNaN(bmi)) { alert('No valid BMI to save'); return; }
+      saveResult(bmi);
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      weightKg.value = heightCm.value = weightLb.value = heightIn.value = ageEl.value = '';
+      sexEl.value = 'unspecified';
+      renderResult(null);
+    });
+
+    shareBtn.addEventListener('click', ()=>{
+      const bmi = bmiValueEl.textContent;
+      if(!bmi || bmi === '—'){ alert('No BMI calculated'); return; }
+      const text = `My BMI is ${bmi} (${bmiCategoryEl.textContent}).`;
+      if(navigator.share){ navigator.share({text}).catch(()=>{}); } else { navigator.clipboard.writeText(text).then(()=> alert('Copied result to clipboard')); }
+    });
+
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear saved BMI history?')){ localStorage.removeItem(STORAGE_KEY); renderHistory(); } });
+    exportHistoryBtn.addEventListener('click', ()=>{
+      const raw = localStorage.getItem(STORAGE_KEY) || '[]';
+      const blob = new Blob([raw], {type: 'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bmi-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    // load history on init
+    renderHistory(); renderResult(null);
+
+    // small helpers: allow Enter to calculate
+    [weightKg, heightCm, weightLb, heightIn, ageEl].forEach(el=> el && el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') calcBtn.click(); }));
+
+  </script>
+</body>
+</html>
