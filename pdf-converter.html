@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text → PDF Converter — Tool i online</title>
+  <meta name="description" content="Convert plain text to a downloadable PDF. Choose page size, orientation, margins, font, and more. Theme: green." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- jsPDF (for PDF generation) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root{
+      --green:#26A69A; --green-700:#1f8c7f; --bg:#ffffff; --muted:#6b6b6b; --card-radius:12px; --shadow:0 10px 30px rgba(16,16,16,0.06); --maxw:1100px; --pad:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;color:#222;background:var(--bg)}
+    .wrap{max-width:var(--maxw);margin:28px auto;padding:16px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    h1{font-size:1.25rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .editor{padding:var(--pad);display:flex;flex-direction:column;gap:12px}
+    textarea#textInput{width:100%;min-height:360px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);padding:12px;font-size:0.95rem;resize:vertical}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06);color:#333}
+
+    .panel{padding:var(--pad);border-left:1px solid rgba(0,0,0,0.03);display:flex;flex-direction:column;gap:12px}
+    .row{display:flex;flex-direction:column;gap:8px}
+    label{color:var(--muted);font-size:0.95rem}
+    select,input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+
+    .meta{color:var(--muted);font-size:0.9rem}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    @media (max-width:980px){.grid{grid-template-columns:1fr}.panel{border-left:none;border-top:1px solid rgba(0,0,0,0.03)}}
+    @media (max-width:480px){.logo-mark{width:40px;height:40px}}
+
+    /* accessibility */
+    :focus:not(:focus-visible){outline:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Text → PDF Converter</h1>
+        <p class="lead">Type or paste text, choose layout options, and download a PDF. Processed locally in your browser. Theme: green.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="editor" aria-labelledby="editor-title">
+          <h2 id="editor-title" style="font-size:1rem;margin:0">Editor</h2>
+
+          <div class="row">
+            <label for="textInput">Enter text</label>
+            <textarea id="textInput" placeholder="Paste or type your text here..." aria-label="Text input for PDF"></textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <label for="fileInput" class="small">Or upload a .txt file</label>
+            <input id="fileInput" type="file" accept=".txt" />
+          </div>
+
+          <div class="controls">
+            <button id="previewBtn" class="btn ghost" type="button"><i class="fa-solid fa-eye"></i> Preview</button>
+            <button id="generateBtn" class="btn primary" type="button"><i class="fa-solid fa-file-pdf"></i> Generate & Download</button>
+            <div class="meta" id="charCount">0 characters</div>
+          </div>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="panel-title">
+          <h3 id="panel-title">Layout & Export</h3>
+
+          <div class="row">
+            <label>Page size</label>
+            <select id="pageSize">
+              <option value="a4">A4 (210 × 297 mm)</option>
+              <option value="letter">Letter (8.5 × 11 in)</option>
+              <option value="a5">A5 (148 × 210 mm)</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <label>Orientation</label>
+            <select id="orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+          </div>
+
+          <div class="row">
+            <label>Margins (mm)</label>
+            <div style="display:flex;gap:8px">
+              <input id="marginTop" type="number" min="0" value="20" style="width:70px"> 
+              <input id="marginRight" type="number" min="0" value="20" style="width:70px"> 
+              <input id="marginBottom" type="number" min="0" value="20" style="width:70px"> 
+              <input id="marginLeft" type="number" min="0" value="20" style="width:70px"> 
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Font & size</label>
+            <div style="display:flex;gap:8px">
+              <select id="fontFamily">
+                <option value="helvetica">Helvetica</option>
+                <option value="times">Times</option>
+                <option value="courier">Courier</option>
+              </select>
+              <input id="fontSize" type="number" min="8" max="48" value="12" style="width:80px">
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Line height</label>
+            <input id="lineHeight" type="number" min="1" max="3" step="0.1" value="1.2" style="width:120px">
+          </div>
+
+          <div class="row">
+            <label>Options</label>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <label><input type="checkbox" id="pageNumbers" checked> Add page numbers</label>
+              <label><input type="checkbox" id="preserveWhitespace"> Preserve multiple spaces and line breaks</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Preview</label>
+            <div class="small">Click Preview to open a PDF preview in a new tab (generated client-side).</div>
+          </div>
+
+          <div class="row">
+            <label>Privacy</label>
+            <div class="small">All conversion happens locally in your browser. Nothing is uploaded.</div>
+          </div>
+
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Access jsPDF
+    const { jsPDF } = window.jspdf;
+
+    // Elements
+    const textInput = document.getElementById('textInput');
+    const fileInput = document.getElementById('fileInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    const charCount = document.getElementById('charCount');
+
+    const pageSizeEl = document.getElementById('pageSize');
+    const orientationEl = document.getElementById('orientation');
+    const marginTop = document.getElementById('marginTop');
+    const marginRight = document.getElementById('marginRight');
+    const marginBottom = document.getElementById('marginBottom');
+    const marginLeft = document.getElementById('marginLeft');
+    const fontFamily = document.getElementById('fontFamily');
+    const fontSize = document.getElementById('fontSize');
+    const lineHeight = document.getElementById('lineHeight');
+    const pageNumbers = document.getElementById('pageNumbers');
+    const preserveWhitespace = document.getElementById('preserveWhitespace');
+
+    // Update character count
+    function updateCharCount(){ const len = textInput.value.length; charCount.textContent = `${len} characters`; }
+    textInput.addEventListener('input', updateCharCount);
+
+    // File upload (text)
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      if(!f.name.endsWith('.txt')){ alert('Please upload a .txt file'); return }
+      const reader = new FileReader();
+      reader.onload = ()=>{ textInput.value = reader.result; updateCharCount(); };
+      reader.readAsText(f);
+      fileInput.value = '';
+    });
+
+    // Helpers: convert mm to pts (1 mm = 2.83465 pts)
+    function mmToPt(mm){ return mm * 2.8346456693; }
+
+    function getPageDimensions(size, orientation){
+      // return dimensions in points (pt)
+      const sizes = {
+        a4: {w:210, h:297},
+        letter: {w:216, h:279},
+        a5: {w:148, h:210}
+      };
+      const s = sizes[size] || sizes.a4;
+      if(orientation === 'landscape') return {w:mmToPt(Math.max(s.w,s.h)), h:mmToPt(Math.min(s.w,s.h))};
+      return {w:mmToPt(Math.min(s.w,s.h)), h:mmToPt(Math.max(s.w,s.h))};
+    }
+
+    function splitTextToLines(doc, text, maxWidth){
+      // jsPDF has splitTextToSize but we'll use its API
+      return doc.splitTextToSize(text, maxWidth);
+    }
+
+    function generatePDF({preview=false}){
+      const size = pageSizeEl.value;
+      const orient = orientationEl.value;
+      const dims = getPageDimensions(size, orient);
+      const mTop = mmToPt(parseFloat(marginTop.value)||20);
+      const mRight = mmToPt(parseFloat(marginRight.value)||20);
+      const mBottom = mmToPt(parseFloat(marginBottom.value)||20);
+      const mLeft = mmToPt(parseFloat(marginLeft.value)||20);
+      const usableWidth = dims.w - mLeft - mRight;
+      const usableHeight = dims.h - mTop - mBottom;
+
+      const doc = new jsPDF({unit:'pt', format:[dims.w, dims.h], orientation: orient});
+      const f = fontFamily.value || 'helvetica';
+      const fs = parseInt(fontSize.value) || 12;
+      const lh = parseFloat(lineHeight.value) || 1.2;
+      doc.setFont(f);
+      doc.setFontSize(fs);
+
+      // prepare text
+      let text = textInput.value || '';
+      if(!preserveWhitespace.checked){
+        // collapse multiple spaces but preserve single newlines
+        text = text.replace(/\t/g, ' ');
+        // replace multiple spaces with single space
+        text = text.replace(/ {2,}/g, ' ');
+      }
+
+      // split by paragraphs
+      const paragraphs = text.split(/\n{2,}/);
+
+      let cursorY = mTop;
+      let pageNum = 1;
+
+      for(let p=0;p<paragraphs.length;p++){
+        const para = paragraphs[p].replace(/\n/g, ' ');
+        const lines = splitTextToLines(doc, para, usableWidth);
+        for(let i=0;i<lines.length;i++){
+          const line = lines[i];
+          if(cursorY + fs * lh > dims.h - mBottom){
+            // new page
+            if(pageNumbers.checked){
+              doc.setFontSize(10); doc.text(String(pageNum), dims.w - mRight - 20, dims.h - mBottom + 10); doc.setFontSize(fs);
+            }
+            doc.addPage([dims.w, dims.h], orient);
+            pageNum++;
+            cursorY = mTop;
+          }
+          doc.text(line, mLeft, cursorY + fs);
+          cursorY += fs * lh;
+        }
+        // paragraph gap
+        cursorY += fs * lh;
+      }
+
+      // final page number
+      if(pageNumbers.checked){ doc.setFontSize(10); doc.text(String(pageNum), dims.w - mRight - 20, dims.h - mBottom + 10); }
+
+      if(preview){
+        const url = doc.output('bloburl');
+        window.open(url, '_blank');
+      } else {
+        const blob = doc.output('blob');
+        const filename = 'document.pdf';
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      }
+    }
+
+    previewBtn.addEventListener('click', ()=>{
+      generatePDF({preview:true});
+    });
+
+    generateBtn.addEventListener('click', ()=>{
+      generatePDF({preview:false});
+    });
+
+    // initial char count
+    updateCharCount();
+
+    // small accessibility: keyboard shortcuts
+    document.addEventListener('keydown', (e)=>{
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){
+        e.preventDefault(); generatePDF({preview:false});
+      }
+    });
+  </script>
+</body>
+</html>
