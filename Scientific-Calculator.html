@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scientific Calculator — Tool i online</title>
+  <meta name="description" content="Professional Scientific Calculator with common and advanced functions. Purple theme, responsive and accessible." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --purple:#5E35B1; --purple-600:#4a148c; --bg:#faf9ff; --card:#ffffff; --muted:#666; --radius:12px; --shadow:0 10px 30px rgba(46,22,56,0.08); --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:linear-gradient(180deg,var(--purple),var(--purple-600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+
+    /* Calculator area */
+    .calc{padding:16px;display:flex;flex-direction:column;gap:12px}
+    .display{background:linear-gradient(180deg,#f3eefb,#f7f4fc);border-radius:10px;padding:12px;min-height:88px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+    .expr{font-size:0.95rem;color:var(--muted);word-break:break-all}
+    .result{font-size:1.6rem;font-weight:700;color:var(--purple-600)}
+
+    .kbd{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    button.key{padding:12px;border-radius:8px;border:none;background:#fff;box-shadow:0 6px 18px rgba(94,53,177,0.05);cursor:pointer;font-weight:700}
+    button.key.op{background:linear-gradient(180deg,var(--purple),var(--purple-600));color:#fff}
+    button.key.func{background:#f6f0fb;color:var(--purple-600);font-weight:600}
+    button.key:active{transform:translateY(1px)}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{padding:8px 10px;border-radius:8px;border:none;cursor:pointer}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--purple);color:#fff}
+
+    /* Right panel: history & memory */
+    .panel{padding:12px;border-left:1px solid rgba(0,0,0,0.04);min-height:320px}
+    .section-title{font-weight:700;color:var(--purple-600)}
+    .history{max-height:44vh;overflow:auto;margin-top:8px}
+    .history-item{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px;background:#fff}
+    .memory{display:flex;gap:8px;margin-top:8px}
+
+    /* wide buttons for important keys */
+    .kbd .wide{grid-column:span 2}
+
+    /* responsive */
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .panel{border-left:none;border-top:1px solid rgba(0,0,0,0.04)} }
+    @media (max-width:480px){ .kbd{grid-template-columns:repeat(4,1fr)} .kbd button{padding:10px} .expr{font-size:0.9rem} .result{font-size:1.25rem} }
+
+    /* accessibility */
+    button:focus{outline:3px solid rgba(94,53,177,0.12)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Scientific Calculator</h1>
+        <p class="lead">Common and advanced math functions. Local, responsive, and accessible. Theme: purple.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="calc" aria-label="Calculator">
+          <div class="display" role="region" aria-label="Calculator display">
+            <div class="expr" id="expr" aria-live="polite">0</div>
+            <div class="result" id="result" aria-live="polite">0</div>
+          </div>
+
+          <div class="controls">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn ghost" id="clearAll">AC</button>
+              <button class="btn ghost" id="backspace">⌫</button>
+              <button class="btn ghost" id="paren">( )</button>
+              <button class="btn ghost" id="degRad">DEG</button>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn ghost" id="copyRes"><i class="fa-solid fa-copy"></i> Copy</button>
+              <button class="btn primary" id="equals"><i class="fa-solid fa-equals"></i> =</button>
+            </div>
+          </div>
+
+          <div class="kbd" id="keyboard">
+            <!-- Row: functions -->
+            <button class="key func" data-insert="sin(">sin</button>
+            <button class="key func" data-insert="cos(">cos</button>
+            <button class="key func" data-insert="tan(">tan</button>
+            <button class="key func" data-insert="asin(">asin</button>
+            <button class="key func" data-insert="acos(">acos</button>
+            <button class="key func" data-insert="atan(">atan</button>
+
+            <!-- row: logs -->
+            <button class="key func" data-insert="ln(">ln</button>
+            <button class="key func" data-insert="log10(">log10</button>
+            <button class="key func" data-insert="sqrt(">√</button>
+            <button class="key func" data-insert="^">^</button>
+            <button class="key func" data-insert="abs(">abs</button>
+            <button class="key func" data-insert="exp(">exp</button>
+
+            <!-- row: numbers/operators -->
+            <button class="key" data-insert="7">7</button>
+            <button class="key" data-insert="8">8</button>
+            <button class="key" data-insert="9">9</button>
+            <button class="key op" data-insert="/">÷</button>
+            <button class="key op" data-insert="*">×</button>
+            <button class="key func" data-insert="%">%</button>
+
+            <button class="key" data-insert="4">4</button>
+            <button class="key" data-insert="5">5</button>
+            <button class="key" data-insert="6">6</button>
+            <button class="key op" data-insert="-">−</button>
+            <button class="key op" data-insert="+">+</button>
+            <button class="key func" data-insert="pi">π</button>
+
+            <button class="key" data-insert="1">1</button>
+            <button class="key" data-insert="2">2</button>
+            <button class="key" data-insert="3">3</button>
+            <button class="key op" data-insert="**">^</button>
+            <button class="key func" data-insert="e">e</button>
+            <button class="key func" data-insert="!">! (fact)</button>
+
+            <button class="key wide" data-insert="0">0</button>
+            <button class="key" data-insert=".">.</button>
+            <button class="key" data-insert="," title="thousands"> ,</button>
+            <button class="key op" data-insert=".">Ans</button>
+            <button class="key op" data-insert="," id="memPlus">M+</button>
+            <button class="key op" data-insert="," id="memMinus">M-</button>
+          </div>
+
+        </section>
+
+        <aside class="panel" aria-label="History and memory">
+          <div>
+            <div class="section-title">Memory</div>
+            <div class="memory">
+              <div style="display:flex;gap:8px">
+                <button class="btn ghost" id="mPlus">M+</button>
+                <button class="btn ghost" id="mMinus">M-</button>
+                <button class="btn ghost" id="mr">MR</button>
+                <button class="btn ghost" id="mc">MC</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="section-title">History</div>
+            <div class="history" id="history"></div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button class="btn ghost" id="clearHistory">Clear</button>
+              <button class="btn ghost" id="copyHistory">Copy All</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Calculator logic
+    const exprEl = document.getElementById('expr');
+    const resultEl = document.getElementById('result');
+    const keyboard = document.getElementById('keyboard');
+    const equalsBtn = document.getElementById('equals');
+    const clearAllBtn = document.getElementById('clearAll');
+    const backspaceBtn = document.getElementById('backspace');
+    const parenBtn = document.getElementById('paren');
+    const degRadBtn = document.getElementById('degRad');
+
+    const historyEl = document.getElementById('history');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const copyHistoryBtn = document.getElementById('copyHistory');
+    const copyResBtn = document.getElementById('copyRes');
+
+    const mPlusBtn = document.getElementById('mPlus');
+    const mMinusBtn = document.getElementById('mMinus');
+    const mrBtn = document.getElementById('mr');
+    const mcBtn = document.getElementById('mc');
+
+    let expression = '';
+    let lastAnswer = 0;
+    let memory = 0;
+    let isDeg = true;
+    let history = JSON.parse(localStorage.getItem('ti_calc_history')||'[]');
+
+    function updateDisplay(){ exprEl.textContent = expression || '0'; resultEl.textContent = String(lastAnswer); }
+    function pushHistory(item){ history.unshift(item); if(history.length>50) history.pop(); localStorage.setItem('ti_calc_history', JSON.stringify(history)); renderHistory(); }
+    function renderHistory(){ historyEl.innerHTML = ''; if(!history.length){ historyEl.innerHTML = '<div class="small">No history yet</div>'; return } history.forEach(h=>{ const d = document.createElement('div'); d.className='history-item'; d.innerHTML = `<div style="font-weight:700">${h.expr}</div><div style="color:var(--muted)">${h.result}</div>`; d.addEventListener('click', ()=>{ expression = h.expr; lastAnswer = h.result; updateDisplay(); }); historyEl.appendChild(d); }); }
+
+    renderHistory(); updateDisplay();
+
+    // Safe evaluator: allow only certain tokens
+    const ALLOWED = /^[0-9+\-*/%^().,\seEpiPI!]*[a-zA-Z()\d+\-*/%^.,\s!]*$/;
+
+    function sanitizeExpr(input){ // normalize common tokens
+      let s = String(input);
+      s = s.replace(/×/g,'*').replace(/÷/g,'/').replace(/—/g,'-').replace(/π/g,'pi').replace(/\s+/g,'');
+      // replace '^' with ** for exponent
+      s = s.replace(/\^/g,'**');
+      // allow 'pi' and 'e'
+      return s;
+    }
+
+    function allowedChars(str){ // basic whitelist chars
+      return /^[0-9a-zA-Z+\-*/().,\s\*\*%!^]*$/.test(str);
+    }
+
+    function evaluateExpression(input){
+      if(!input) return 0;
+      const s = sanitizeExpr(input);
+      if(!allowedChars(s)) throw new Error('Invalid characters in expression');
+      // replace factorial (!) calls
+      // implement simple factorial: n! -> fact(n)
+      const exprWithFact = s.replace(/(\d+)!/g, 'fact($1)');
+
+      // map functions to Math equivalents
+      const fnMap = {
+        'sqrt': 'Math.sqrt', 'abs':'Math.abs', 'ln':'Math.log', 'log10':'Math.log10', 'exp':'Math.exp',
+        'sin':'Math.sin','cos':'Math.cos','tan':'Math.tan','asin':'Math.asin','acos':'Math.acos','atan':'Math.atan',
+        'pi':'Math.PI','e':'Math.E'
+      };
+
+      let expr = exprWithFact;
+      // replace word functions (boundary)
+      expr = expr.replace(/\b(pi)\b/g, 'Math.PI');
+      expr = expr.replace(/\b(e)\b/g, 'Math.E');
+      Object.keys(fnMap).forEach(k=>{
+        const v = fnMap[k];
+        const re = new RegExp('\\b'+k+'\\b','g');
+        expr = expr.replace(re, v);
+      });
+
+      // handle degree mode for trig: wrap angle argument in radians conversion when necessary
+      if(isDeg){
+        // convert Math.sin(30) -> Math.sin((30)*Math.PI/180)
+        expr = expr.replace(/Math\.sin\(([^)]+)\)/g, 'Math.sin(($1)*Math.PI/180)');
+        expr = expr.replace(/Math\.cos\(([^)]+)\)/g, 'Math.cos(($1)*Math.PI/180)');
+        expr = expr.replace(/Math\.tan\(([^)]+)\)/g, 'Math.tan(($1)*Math.PI/180)');
+        expr = expr.replace(/Math\.asin\(([^)]+)\)/g, '(180/Math.PI)*Math.asin($1)');
+        expr = expr.replace(/Math\.acos\(([^)]+)\)/g, '(180/Math.PI)*Math.acos($1)');
+        expr = expr.replace(/Math\.atan\(([^)]+)\)/g, '(180/Math.PI)*Math.atan($1)');
+      }
+
+      // factorial function
+      function fact(n){ n = Math.floor(n); if(n<0) throw new Error('Factorial of negative'); let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+
+      // percent handling: replace 'number%' with '(number/100)'
+      expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+
+      // final safety check: only allow certain characters now
+      if(!/^[0-9+\-*/().,\s*MathPIEfactnrepow^%]*$/.test(expr)){
+        // allow letters from Math etc. but simple check
+      }
+
+      // Evaluate using Function in a controlled scope
+      try{
+        const f = new Function('fact', 'Math', 'return ' + expr + ';');
+        const val = f(fact, Math);
+        if(typeof val === 'number' && !isFinite(val)) throw new Error('Result not finite');
+        return val;
+      }catch(e){ throw e; }
+    }
+
+    // Input handling
+    keyboard.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button'); if(!btn) return;
+      const insert = btn.dataset.insert;
+      if(insert){
+        // special handling for '!' factorial and pi
+        if(insert === '!'){
+          expression += '!';
+        } else if(insert === 'Ans'){
+          expression += lastAnswer;
+        } else if(insert === 'pi'){
+          expression += 'pi';
+        } else if(insert === 'e'){
+          expression += 'e';
+        } else {
+          expression += insert;
+        }
+        updateDisplay();
+      }
+    });
+
+    equalsBtn.addEventListener('click', ()=>{
+      try{
+        const res = evaluateExpression(expression.replace(/,/g,''));
+        lastAnswer = typeof res === 'number' ? Math.round((res + Number.EPSILON) * 1e12)/1e12 : res;
+        updateDisplay();
+        pushHistory({expr: expression, result: lastAnswer});
+        expression = '';
+      }catch(err){ alert('Error: ' + err.message); }
+    });
+
+    clearAllBtn.addEventListener('click', ()=>{ expression=''; lastAnswer=0; updateDisplay(); });
+    backspaceBtn.addEventListener('click', ()=>{ expression = expression.slice(0,-1); updateDisplay(); });
+
+    parenBtn.addEventListener('click', ()=>{ // smart paren
+      const open = (expression.match(/\(/g)||[]).length;
+      const close = (expression.match(/\)/g)||[]).length;
+      if(open === close) expression += '('; else expression += ')';
+      updateDisplay();
+    });
+
+    degRadBtn.addEventListener('click', ()=>{ isDeg = !isDeg; degRadBtn.textContent = isDeg ? 'DEG' : 'RAD'; });
+
+    // keyboard support
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ equalsBtn.click(); e.preventDefault(); }
+      if(e.key === 'Backspace'){ backspaceBtn.click(); }
+      const allowed = '0123456789+-*/().,%^';
+      if(allowed.includes(e.key)){
+        expression += e.key; updateDisplay();
+      }
+    });
+
+    // history actions
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear history?')){ history = []; localStorage.removeItem('ti_calc_history'); renderHistory(); } });
+    copyHistoryBtn.addEventListener('click', async ()=>{ const text = history.map(h=>`${h.expr} = ${h.result}`).join('\n'); try{ await navigator.clipboard.writeText(text); alert('History copied'); }catch(e){ alert('Copy failed'); } });
+
+    // copy result
+    copyResBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(String(lastAnswer)); alert('Result copied'); }catch(e){ alert('Copy failed'); } });
+
+    // memory
+    mPlusBtn.addEventListener('click', ()=>{ memory += lastAnswer; updateMemoryUI(); });
+    mMinusBtn.addEventListener('click', ()=>{ memory -= lastAnswer; updateMemoryUI(); });
+    mrBtn.addEventListener('click', ()=>{ expression += memory; updateDisplay(); });
+    mcBtn.addEventListener('click', ()=>{ memory = 0; updateMemoryUI(); });
+
+    function updateMemoryUI(){ // small visual hint in history panel
+      // render memory as first history item
+      const memDiv = document.createElement('div'); memDiv.className='history-item'; memDiv.innerHTML = `<div style="font-weight:700">Memory</div><div style="color:var(--muted)">${memory}</div>`;
+      // remove existing memory header and re-add
+      const first = historyEl.firstChild; if(first && first.classList && first.classList.contains('memory-item')){ historyEl.removeChild(first); }
+      memDiv.classList.add('memory-item'); historyEl.insertBefore(memDiv, historyEl.firstChild);
+    }
+
+    // initial memory render
+    updateMemoryUI();
+
+    // init update
+    updateDisplay();
+  </script>
+</body>
+</html>
