@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Age Calculator — Tool i online</title>
+  <meta name="description" content="Calculate exact age (years, months, days, hours, minutes) and next birthday. Professional responsive Age Calculator with purple theme." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --purple:#5E35B1; --purple-700:#4a148c; --bg:#ffffff; --muted:#666; --card-radius:12px; --shadow:0 12px 30px rgba(74,20,140,0.08); --maxw:920px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:linear-gradient(180deg,var(--purple),var(--purple-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+
+    .editor{padding:18px;display:flex;flex-direction:column;gap:12px}
+    label{font-size:0.95rem;color:var(--muted)}
+    .row{display:flex;gap:8px;align-items:center}
+    input[type=date], input[type=time], select{padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem}
+    input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);width:90px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--purple);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06)}
+
+    .panel{padding:18px;border-left:1px solid rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:12px}
+    .stat{background:#fbf7ff;padding:14px;border-radius:10px;border:1px solid rgba(94,53,177,0.03)}
+    .stat h3{margin:0;font-size:0.95rem;color:var(--purple-700)}
+    .big{font-size:1.6rem;font-weight:800;color:var(--purple-700)}
+    .small{color:var(--muted)}
+
+    .results{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .result-card{padding:12px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.03)}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .panel{border-left:none;border-top:1px solid rgba(0,0,0,0.03)} .results{grid-template-columns:1fr} }
+    @media (max-width:480px){ .logo-mark{width:40px;height:40px} }
+
+    /* accessibility */
+    :focus{outline:3px solid rgba(94,53,177,0.12)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Age Calculator</h1>
+        <p class="lead">Get exact age (years, months, days, hours, minutes), next birthday countdown and age on a target date. Theme: purple.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="editor" aria-labelledby="editor-title">
+          <h2 id="editor-title" style="margin:0;font-size:1rem">Inputs</h2>
+
+          <div>
+            <label for="dob">Date of birth</label>
+            <div style="margin-top:8px" class="row">
+              <input id="dob" type="date" aria-label="Date of birth">
+              <input id="dobTime" type="time" aria-label="Birth time (optional)" title="Optional time of birth">
+            </div>
+            <div class="small">Leave time empty to calculate using midnight (local timezone).</div>
+          </div>
+
+          <div>
+            <label for="target">Calculate age at (optional)</label>
+            <div style="margin-top:8px" class="row">
+              <input id="target" type="date" aria-label="Target date">
+              <input id="targetTime" type="time" aria-label="Target time (optional)">
+            </div>
+            <div class="small">If empty, uses current date & time.</div>
+          </div>
+
+          <div>
+            <label>Timezone</label>
+            <div style="margin-top:8px" class="row">
+              <select id="tzSelect" aria-label="Timezone">
+                <option value="local">Use local timezone</option>
+                <option value="UTC">UTC</option>
+                <option value="IST">Asia/Kolkata (IST)</option>
+              </select>
+              <div class="small">Choosing UTC/IST calculates using that timezone.
+              </div>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="calcBtn" class="btn primary"><i class="fa-solid fa-calculator"></i> Calculate</button>
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+            <div style="flex:1"></div>
+            <button id="shareBtn" class="btn primary"><i class="fa-solid fa-share-nodes"></i> Share</button>
+          </div>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="result-title">
+          <h2 id="result-title" style="margin:0;font-size:1rem">Results</h2>
+
+          <div class="stat">
+            <h3>Exact age</h3>
+            <div class="big" id="exactAge">—</div>
+            <div class="small" id="exactDetail">Years · Months · Days · HH:MM</div>
+          </div>
+
+          <div class="stat">
+            <h3>Next birthday</h3>
+            <div class="big" id="nextBdayCountdown">—</div>
+            <div class="small" id="nextBdayDate">Date: —</div>
+          </div>
+
+          <div style="margin-top:6px">
+            <h3 style="margin:0">Age on target date</h3>
+            <div class="results" id="targetResults">
+              <div class="result-card"><div class="small">Age</div><div id="ageOnTarget">—</div></div>
+              <div class="result-card"><div class="small">Days between</div><div id="daysBetween">—</div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;display:flex;gap:8px;justify-content:space-between;align-items:center">
+            <div class="small">All calculations happen locally in your browser.</div>
+            <div class="small" id="computedAt">—</div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const dobEl = document.getElementById('dob');
+    const dobTimeEl = document.getElementById('dobTime');
+    const targetEl = document.getElementById('target');
+    const targetTimeEl = document.getElementById('targetTime');
+    const tzSelect = document.getElementById('tzSelect');
+
+    const calcBtn = document.getElementById('calcBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareBtn = document.getElementById('shareBtn');
+
+    const exactAgeEl = document.getElementById('exactAge');
+    const exactDetailEl = document.getElementById('exactDetail');
+    const nextBdayCountdownEl = document.getElementById('nextBdayCountdown');
+    const nextBdayDateEl = document.getElementById('nextBdayDate');
+    const ageOnTargetEl = document.getElementById('ageOnTarget');
+    const daysBetweenEl = document.getElementById('daysBetween');
+    const computedAtEl = document.getElementById('computedAt');
+
+    function toLocalDateTime(dateStr, timeStr, tz){
+      if(!dateStr) return null;
+      // if tz is 'local', build native Date using local time
+      if(tz === 'local'){
+        if(timeStr) return new Date(dateStr + 'T' + timeStr);
+        return new Date(dateStr + 'T00:00');
+      }
+      // if UTC
+      if(tz === 'UTC'){
+        if(timeStr) return new Date(dateStr + 'T' + timeStr + 'Z');
+        return new Date(dateStr + 'T00:00Z');
+      }
+      // simple support for IST (Asia/Kolkata) by creating as if UTC and subtracting offset
+      if(tz === 'IST'){
+        // create in UTC by appending Z, then shift by +5:30 to represent IST -> simpler: parse parts
+        const [y,m,d] = dateStr.split('-').map(Number);
+        let hours = 0, minutes = 0;
+        if(timeStr){ const [hh,mm] = timeStr.split(':').map(Number); hours = hh; minutes = mm; }
+        // create a Date as if in UTC for the IST local time by building Date.UTC and subtracting offset
+        const utcMillis = Date.UTC(y, m-1, d, hours - 5, minutes - 30);
+        return new Date(utcMillis);
+      }
+      // fallback to local
+      return toLocalDateTime(dateStr, timeStr, 'local');
+    }
+
+    function diffDetailed(from, to){
+      // Ensure from <= to
+      if(from > to){ const tmp = from; from = to; to = tmp; }
+      // calculate years, months, days
+      const fromY = from.getUTCFullYear();
+      const fromM = from.getUTCMonth();
+      const fromD = from.getUTCDate();
+      const toY = to.getUTCFullYear();
+      const toM = to.getUTCMonth();
+      const toD = to.getUTCDate();
+
+      let years = toY - fromY;
+      let months = toM - fromM;
+      let days = toD - fromD;
+
+      if(days < 0){
+        // borrow days from previous month
+        const prevMonth = new Date(Date.UTC(toY, toM, 0));
+        days += prevMonth.getUTCDate();
+        months -= 1;
+      }
+      if(months < 0){ months += 12; years -= 1; }
+
+      // now calculate hours/minutes
+      const fromTime = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate(), from.getUTCHours(), from.getUTCMinutes(), from.getUTCSeconds());
+      const toTime = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate(), to.getUTCHours(), to.getUTCMinutes(), to.getUTCSeconds());
+      let remMs = toTime - fromTime;
+      // subtract years and months by creating an anchor
+      const anchor = new Date(Date.UTC(from.getUTCFullYear() + years, from.getUTCMonth() + months, from.getUTCDate(), from.getUTCHours(), from.getUTCMinutes(), from.getUTCSeconds()));
+      remMs = toTime - anchor.getTime();
+      let hours = Math.floor(remMs / (1000*60*60)); remMs -= hours*(1000*60*60);
+      let minutes = Math.floor(remMs / (1000*60));
+
+      return {years, months, days, hours, minutes};
+    }
+
+    function formatDetailed(d){
+      return `${d.years} yrs · ${d.months} mos · ${d.days} days · ${d.hours}h ${d.minutes}m`;
+    }
+
+    function calculate(){
+      const tz = tzSelect.value;
+      const dobDate = toLocalDateTime(dobEl.value, dobTimeEl.value, tz);
+      if(!dobDate){ alert('Please enter date of birth'); return; }
+      const targetDate = targetEl.value ? toLocalDateTime(targetEl.value, targetTimeEl.value, tz) : new Date();
+      // compute exact age
+      const d = diffDetailed(dobDate, targetDate);
+      exactAgeEl.textContent = `${d.years} years, ${d.months} months`;
+      exactDetailEl.textContent = `${d.days} days · ${d.hours} hours · ${d.minutes} minutes`;
+
+      // next birthday
+      const current = targetDate;
+      let nextYear = current.getUTCFullYear();
+      const bMonth = dobDate.getUTCMonth();
+      const bDate = dobDate.getUTCDate();
+      // candidate
+      let candidate = new Date(Date.UTC(nextYear, bMonth, bDate, dobDate.getUTCHours(), dobDate.getUTCMinutes(), dobDate.getUTCSeconds()));
+      if(candidate <= current) candidate = new Date(Date.UTC(nextYear+1, bMonth, bDate, dobDate.getUTCHours(), dobDate.getUTCMinutes(), dobDate.getUTCSeconds()));
+      const until = diffDetailed(current, candidate);
+      nextBdayCountdownEl.textContent = `${until.months} mo · ${until.days} d · ${until.hours} h`;
+      nextBdayDateEl.textContent = `Date: ${candidate.toUTCString()}`;
+
+      // age on target
+      const ageOnTarget = diffDetailed(dobDate, targetDate);
+      ageOnTargetEl.textContent = formatDetailed(ageOnTarget);
+
+      // days between
+      const daysBetween = Math.floor((targetDate.getTime() - dobDate.getTime())/(1000*60*60*24));
+      daysBetweenEl.textContent = `${daysBetween} days`;
+
+      computedAtEl.textContent = 'Computed: ' + new Date().toLocaleString();
+    }
+
+    calcBtn.addEventListener('click', calculate);
+    clearBtn.addEventListener('click', ()=>{
+      dobEl.value = ''; dobTimeEl.value = ''; targetEl.value = ''; targetTimeEl.value = ''; tzSelect.value = 'local';
+      exactAgeEl.textContent = '—'; exactDetailEl.textContent = 'Years · Months · Days · HH:MM'; nextBdayCountdownEl.textContent = '—'; nextBdayDateEl.textContent = 'Date: —'; ageOnTargetEl.textContent = '—'; daysBetweenEl.textContent = '—'; computedAtEl.textContent = '—';
+    });
+
+    copyBtn.addEventListener('click', async ()=>{
+      const text = `Exact age: ${exactAgeEl.textContent} (${exactDetailEl.textContent})\nNext birthday: ${nextBdayCountdownEl.textContent} — ${nextBdayDateEl.textContent} \nAge on target: ${ageOnTargetEl.textContent}`;
+      try{ await navigator.clipboard.writeText(text); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); }
+    });
+
+    shareBtn.addEventListener('click', ()=>{
+      const shareText = `I am ${exactAgeEl.textContent} old (${exactDetailEl.textContent}). Next birthday in ${nextBdayCountdownEl.textContent}.`;
+      if(navigator.share){ navigator.share({text: shareText}).catch(()=>{}); } else { alert(shareText); }
+    });
+
+    // keyboard accessibility
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') calculate(); });
+  </script>
+</body>
+</html>
