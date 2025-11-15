@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Filter Editor — Tool i online</title>
+  <meta name="description" content="Apply filters and adjustments to images (brightness, contrast, saturation, blur, hue, sepia, etc.). Professional, responsive Image Filter Editor themed in red." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --red:#D32F2F; --red-600:#c62828; --bg:#fff; --muted:#6b6b6b; --card-radius:12px; --shadow:0 10px 30px rgba(16,16,16,0.08); --maxw:1100px; --pad:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;color:#222;background:var(--bg)}
+    .wrap{max-width:var(--maxw);margin:28px auto;padding:16px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    h1{font-size:1.3rem;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:var(--card-radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    /* Left area: preview */
+    .editor{padding:var(--pad);display:flex;flex-direction:column;gap:12px}
+    .dropzone{border:2px dashed rgba(0,0,0,0.06);border-radius:10px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:300px;background:linear-gradient(180deg, rgba(211,47,47,0.02), transparent)}
+    .dropzone.dragover{border-color:var(--red);background:linear-gradient(180deg, rgba(211,47,47,0.04), rgba(211,47,47,0.02))}
+    #previewWrap{display:flex;align-items:center;justify-content:center;padding:8px;background:#fafafa;border-radius:8px}
+    img#preview{max-width:100%;height:auto;border-radius:6px;display:block}
+
+    .controls{display:flex;flex-wrap:wrap;gap:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--red);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06);color:#333}
+
+    .sliders{display:flex;flex-direction:column;gap:12px}
+    .slider-row{display:flex;align-items:center;gap:10px}
+    .slider-row label{min-width:110px;color:var(--muted);font-size:0.95rem}
+    .slider-row input[type=range]{flex:1}
+    .value{width:62px;text-align:right;color:var(--muted);font-weight:600}
+
+    /* presets */
+    .presets{display:flex;gap:8px;flex-wrap:wrap}
+    .preset{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);cursor:pointer}
+    .preset.active{border-color:var(--red);box-shadow:0 6px 18px rgba(211,47,47,0.06)}
+
+    /* right panel */
+    .panel{padding:var(--pad);border-left:1px solid rgba(0,0,0,0.03);display:flex;flex-direction:column;gap:12px}
+    .panel h3{margin:0}
+    .row{display:flex;flex-direction:column;gap:8px}
+    .chip{padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:#fff}
+
+    .footer-note{color:var(--muted);font-size:0.9rem}
+
+    @media (max-width:980px){.grid{grid-template-columns:1fr}.panel{border-left:none;border-top:1px solid rgba(0,0,0,0.03)}}
+    @media (max-width:480px){.dropzone{min-height:180px;padding:12px}.logo-mark{width:40px;height:40px}}
+
+    /* focus-visible */
+    :focus:not(:focus-visible){outline:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Image Filter Editor</h1>
+        <p class="lead">Apply live filters — brightness, contrast, saturation, blur, hue, sepia and more. Processed locally in your browser. Theme: red.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="editor" aria-labelledby="editor-title">
+          <h2 id="editor-title" style="font-size:1rem;margin:0">Editor</h2>
+
+          <div id="dropzone" class="dropzone" tabindex="0" aria-label="Drop image here or click to upload">
+            <input id="fileInput" type="file" accept="image/*" style="display:none">
+            <div>
+              <p style="margin:0"><strong>Drop an image</strong> here or <button id="browseBtn" class="btn ghost" type="button">Browse</button></p>
+              <p style="margin:6px 0 0;color:var(--muted);font-size:0.95rem">JPEG, PNG, WebP supported. Images are not uploaded — processed locally.</p>
+            </div>
+          </div>
+
+          <div id="previewWrap" style="display:none">
+            <img id="preview" alt="Image preview" src="" />
+          </div>
+
+          <div class="controls">
+            <button class="btn primary" id="resetBtn" title="Reset all filters"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            <button class="btn ghost" id="compareBtn" title="Toggle compare original">Compare</button>
+            <button class="btn primary" id="downloadBtn"><i class="fa-solid fa-download"></i> Download</button>
+          </div>
+
+          <div class="sliders" id="sliders" style="display:none">
+            <!-- sliders injected by JS -->
+          </div>
+
+          <div style="margin-top:6px;color:var(--muted);font-size:0.95rem" id="meta">No image loaded</div>
+        </section>
+
+        <aside class="panel" aria-labelledby="panel-title">
+          <h3 id="panel-title">Presets & Options</h3>
+
+          <div class="row">
+            <label>Presets</label>
+            <div class="presets">
+              <div class="preset" data-preset="none">None</div>
+              <div class="preset" data-preset="vivid">Vivid</div>
+              <div class="preset" data-preset="bw">Black & White</div>
+              <div class="preset" data-preset="retro">Retro</div>
+              <div class="preset" data-preset="cold">Cold</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Output format</label>
+            <div style="display:flex;gap:8px">
+              <button class="chip" data-format="png">PNG</button>
+              <button class="chip" data-format="jpeg">JPEG</button>
+              <button class="chip" data-format="webp">WebP</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label>Quick tips</label>
+            <div class="footer-note">Use Compare to toggle original. Download saves the filtered image locally. Keyboard: Arrow keys adjust selected slider when focused.</div>
+          </div>
+
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const browseBtn = document.getElementById('browseBtn');
+    const previewWrap = document.getElementById('previewWrap');
+    const preview = document.getElementById('preview');
+    const slidersEl = document.getElementById('sliders');
+    const resetBtn = document.getElementById('resetBtn');
+    const compareBtn = document.getElementById('compareBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const meta = document.getElementById('meta');
+
+    let originalSrc = null;
+    let originalBlob = null;
+    let activePreset = 'none';
+    let currentFormat = 'png';
+
+    // Filter state with defaults
+    const state = {
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      hue: 0,
+      sepia: 0,
+      grayscale: 0,
+      invert: 0,
+      blur: 0
+    };
+
+    const slidersConfig = [
+      {key:'brightness', min:0, max:200, step:1, label:'Brightness (%)'},
+      {key:'contrast', min:0, max:200, step:1, label:'Contrast (%)'},
+      {key:'saturation', min:0, max:200, step:1, label:'Saturation (%)'},
+      {key:'hue', min:0, max:360, step:1, label:'Hue (°)'},
+      {key:'sepia', min:0, max:100, step:1, label:'Sepia (%)'},
+      {key:'grayscale', min:0, max:100, step:1, label:'Grayscale (%)'},
+      {key:'invert', min:0, max:100, step:1, label:'Invert (%)'},
+      {key:'blur', min:0, max:10, step:0.1, label:'Blur (px)'}
+    ];
+
+    // build sliders
+    function buildSliders(){
+      slidersEl.innerHTML = '';
+      slidersConfig.forEach(cfg => {
+        const row = document.createElement('div');
+        row.className = 'slider-row';
+        row.innerHTML = `
+          <label for="s_${cfg.key}">${cfg.label}</label>
+          <input id="s_${cfg.key}" type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${state[cfg.key]}" data-key="${cfg.key}" />
+          <div class="value" id="v_${cfg.key}">${state[cfg.key]}</div>
+        `;
+        slidersEl.appendChild(row);
+      });
+
+      // attach events
+      slidersEl.querySelectorAll('input[type=range]').forEach(r => {
+        r.addEventListener('input', (e)=>{
+          const k = e.target.dataset.key;
+          const val = e.target.value;
+          state[k] = val;
+          document.getElementById('v_'+k).textContent = val;
+          applyFilters();
+        });
+      });
+    }
+
+    buildSliders();
+
+    // presets
+    const presets = {
+      none: {brightness:100, contrast:100, saturation:100, hue:0, sepia:0, grayscale:0, invert:0, blur:0},
+      vivid: {brightness:110, contrast:120, saturation:140, hue:0, sepia:0, grayscale:0, invert:0, blur:0},
+      bw: {brightness:100, contrast:110, saturation:0, hue:0, sepia:0, grayscale:100, invert:0, blur:0},
+      retro: {brightness:95, contrast:95, saturation:80, hue:10, sepia:25, grayscale:0, invert:0, blur:0},
+      cold: {brightness:100, contrast:105, saturation:90, hue:200, sepia:0, grayscale:0, invert:0, blur:0}
+    };
+
+    document.querySelectorAll('.preset').forEach(el => el.addEventListener('click', ()=>{
+      document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      activePreset = el.dataset.preset;
+      Object.assign(state, presets[activePreset]);
+      // update sliders
+      slidersConfig.forEach(cfg => {
+        const input = document.getElementById('s_'+cfg.key);
+        input.value = state[cfg.key];
+        document.getElementById('v_'+cfg.key).textContent = state[cfg.key];
+      });
+      applyFilters();
+    }));
+
+    // output format chips
+    document.querySelectorAll('.chip[data-format]').forEach(c => c.addEventListener('click', ()=>{
+      document.querySelectorAll('.chip[data-format]').forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');
+      currentFormat = c.dataset.format;
+    }));
+    document.querySelector('.chip[data-format="png"]').classList.add('active');
+
+    // dropzone handlers
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }));
+
+    dropzone.addEventListener('drop', e=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) handleFile(f); });
+    browseBtn.addEventListener('click', ()=> fileInput.click());
+    dropzone.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', e=>{ const f = e.target.files[0]; if(f) handleFile(f); fileInput.value = ''; });
+
+    function handleFile(file){
+      if(!file.type.startsWith('image/')){ alert('Please upload an image file'); return }
+      originalBlob = file;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        originalSrc = reader.result;
+        preview.src = originalSrc;
+        previewWrap.style.display = '';
+        slidersEl.style.display = '';
+        meta.textContent = `File: ${file.name} — ${formatBytes(file.size)} — ${file.type}`;
+        // reset state and UI
+        Object.assign(state, presets.none);
+        document.querySelectorAll('.preset').forEach(x=>x.classList.remove('active'));
+        document.querySelector('.preset[data-preset="none"]').classList.add('active');
+        slidersConfig.forEach(cfg => { document.getElementById('s_'+cfg.key).value = state[cfg.key]; document.getElementById('v_'+cfg.key).textContent = state[cfg.key]; });
+        applyFilters();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function applyFilters(){
+      if(!preview.src) return;
+      const f = `brightness(${state.brightness}%) contrast(${state.contrast}%) saturate(${state.saturation}%) hue-rotate(${state.hue}deg) sepia(${state.sepia}%) grayscale(${state.grayscale}%) invert(${state.invert}%) blur(${state.blur}px)`;
+      preview.style.filter = f;
+    }
+
+    // compare original toggle
+    let comparing = false;
+    compareBtn.addEventListener('click', ()=>{
+      if(!preview.src) return;
+      comparing = !comparing;
+      preview.src = comparing ? originalSrc : originalSrc; // keep same src but toggle filter
+      preview.style.filter = comparing ? 'none' : buildFilterString();
+      compareBtn.classList.toggle('active', comparing);
+      compareBtn.textContent = comparing ? 'Original' : 'Compare';
+    });
+
+    function buildFilterString(){ return `brightness(${state.brightness}%) contrast(${state.contrast}%) saturate(${state.saturation}%) hue-rotate(${state.hue}deg) sepia(${state.sepia}%) grayscale(${state.grayscale}%) invert(${state.invert}%) blur(${state.blur}px)`; }
+
+    // reset
+    resetBtn.addEventListener('click', ()=>{
+      Object.assign(state, presets.none);
+      slidersConfig.forEach(cfg => { document.getElementById('s_'+cfg.key).value = state[cfg.key]; document.getElementById('v_'+cfg.key).textContent = state[cfg.key]; });
+      applyFilters();
+    });
+
+    // download: draw to canvas with ctx.filter to bake filters
+    downloadBtn.addEventListener('click', ()=>{
+      if(!preview.src){ alert('No image'); return }
+      const imgEl = new Image();
+      imgEl.onload = ()=>{
+        // create canvas sized to image natural size
+        const tmp = document.createElement('canvas');
+        tmp.width = imgEl.naturalWidth;
+        tmp.height = imgEl.naturalHeight;
+        const tctx = tmp.getContext('2d');
+        // set ctx filter matching current state
+        tctx.filter = buildFilterString();
+        tctx.drawImage(imgEl, 0, 0, tmp.width, tmp.height);
+        const mime = currentFormat === 'jpeg' ? 'image/jpeg' : currentFormat === 'webp' ? 'image/webp' : 'image/png';
+        tmp.toBlob(blob => {
+          if(!blob) { alert('Failed to create image'); return }
+          const a = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          a.href = url;
+          const ext = currentFormat === 'jpeg' ? 'jpg' : currentFormat;
+          const filename = (originalBlob && originalBlob.name) ? (originalBlob.name.replace(/\.[^/.]+$/, '') + `-filtered.${ext}`) : `filtered-image.${ext}`;
+          a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        }, mime, 0.95);
+      };
+      imgEl.src = originalSrc;
+    });
+
+    // helpers
+    function formatBytes(bytes){ if(bytes < 1024) return bytes + ' B'; const kb = bytes/1024; if(kb < 1024) return kb.toFixed(1) + ' KB'; return (kb/1024).toFixed(2) + ' MB'; }
+
+    // keyboard accessibility: arrow keys change focused slider
+    document.addEventListener('keydown', (e)=>{
+      const active = document.activeElement;
+      if(active && active.type === 'range'){
+        const step = parseFloat(active.step) || 1;
+        let val = parseFloat(active.value);
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowDown'){ val = Math.max(parseFloat(active.min), val - step); active.value = val; active.dispatchEvent(new Event('input')); e.preventDefault(); }
+        if(e.key === 'ArrowRight' || e.key === 'ArrowUp'){ val = Math.min(parseFloat(active.max), val + step); active.value = val; active.dispatchEvent(new Event('input')); e.preventDefault(); }
+      }
+    });
+
+    // focus-dropzone keys
+    dropzone.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { fileInput.click(); e.preventDefault(); } });
+
+  </script>
+</body>
+</html>
