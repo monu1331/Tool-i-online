@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notes Maker & Editor — Tool i online</title>
+  <meta name="description" content="Create, edit, search and export notes. Rich but lightweight editor with autosave and local storage. Theme: green." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root{ --green:#26A69A; --green-dark:#1f8c7f; --bg:#ffffff; --muted:#6b6b6b; --card-radius:12px; --shadow:0 10px 30px rgba(16,16,16,0.06); --maxw:1200px; --gap:16px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;color:#222;background:var(--bg)}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{display:flex;align-items:center;gap:10px}
+    .logo-mark{width:46px;height:46px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    h1{font-size:1.2rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:#fff;border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:var(--gap)}
+
+    /* Sidebar (notes list) */
+    .sidebar{padding:14px;border-right:1px solid rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:10px}
+    .sb-controls{display:flex;gap:8px}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid rgba(0,0,0,0.06);color:#333}
+    .search{display:flex;gap:8px}
+    .search input{flex:1;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+
+    .notes-list{margin-top:6px;overflow:auto;max-height:62vh;padding-right:6px}
+    .note-item{padding:10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:6px;border:1px solid transparent}
+    .note-item:hover{background:rgba(38,166,154,0.04)}
+    .note-item.active{background:linear-gradient(90deg, rgba(38,166,154,0.08), rgba(38,166,154,0.03));border-color:rgba(38,166,154,0.12)}
+    .note-title{font-weight:700}
+    .note-meta{font-size:0.8rem;color:var(--muted)}
+
+    /* Editor */
+    .editor{display:flex;flex-direction:column;min-height:60vh}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04);background:#fbfbfb}
+    .toolbar button{background:#fff;border:1px solid rgba(0,0,0,0.06);padding:8px;border-radius:8px;cursor:pointer}
+    .toolbar .toggle.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+    .title-input{padding:12px;border:none;border-bottom:1px solid rgba(0,0,0,0.04);font-size:1.1rem;font-weight:700}
+    .content{flex:1;padding:12px;outline:none;min-height:300px}
+    .content[contenteditable="true"]{white-space:pre-wrap}
+
+    .editor-actions{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(0,0,0,0.04);justify-content:flex-end}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    /* responsive */
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr}
+      .notes-list{max-height:30vh}
+    }
+    @media (max-width:480px){
+      .logo-mark{width:40px;height:40px}
+      .search input{padding:6px}
+    }
+
+    /* accessibility */
+    :focus{outline:3px solid rgba(38,166,154,0.12)}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <div class="logo-mark">Ti</div>
+        <div>
+          <h1>Notes Maker & Editor</h1>
+          <p class="lead">Create, search, tag and export notes. Auto-saves locally. Theme: green.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <aside class="sidebar" aria-label="Notes sidebar">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="sb-controls">
+              <button id="newNote" class="btn primary"><i class="fa-solid fa-plus"></i> New</button>
+              <button id="importTxt" class="btn ghost" title="Import .txt"><i class="fa-solid fa-file-import"></i></button>
+            </div>
+            <div style="text-align:right" class="small">Saved locally</div>
+          </div>
+
+          <div class="search">
+            <input id="searchInput" placeholder="Search notes..." aria-label="Search notes">
+            <select id="sortBy" aria-label="Sort notes">
+              <option value="updated">Recently updated</option>
+              <option value="created">Created</option>
+              <option value="title">Title</option>
+            </select>
+          </div>
+
+          <div class="notes-list" id="notesList" role="list"></div>
+
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="exportAll" class="btn ghost"><i class="fa-solid fa-file-export"></i> Export All</button>
+            <button id="clearAll" class="btn ghost"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </aside>
+
+        <section class="editor" aria-label="Editor">
+          <div class="toolbar" role="toolbar" aria-label="Editor toolbar">
+            <button data-cmd="bold" title="Bold"><i class="fa-solid fa-bold"></i></button>
+            <button data-cmd="italic" title="Italic"><i class="fa-solid fa-italic"></i></button>
+            <button data-cmd="underline" title="Underline"><i class="fa-solid fa-underline"></i></button>
+            <button data-cmd="insertUnorderedList" title="Bulleted list"><i class="fa-solid fa-list-ul"></i></button>
+            <button data-cmd="insertOrderedList" title="Numbered list"><i class="fa-solid fa-list-ol"></i></button>
+            <button data-cmd="blockquote" title="Blockquote">"</button>
+            <button id="toggleMarkdown" class="toggle" title="Toggle Markdown preview">MD</button>
+            <div style="flex:1"></div>
+            <button id="undoBtn" title="Undo"><i class="fa-solid fa-undo"></i></button>
+            <button id="redoBtn" title="Redo"><i class="fa-solid fa-redo"></i></button>
+          </div>
+
+          <input id="noteTitle" class="title-input" placeholder="Untitled note" aria-label="Note title">
+
+          <div id="content" class="content" contenteditable="true" aria-label="Note content"></div>
+
+          <div class="editor-actions">
+            <div style="flex:1" class="small" id="noteMeta">No note selected</div>
+            <div style="display:flex;gap:8px">
+              <button id="exportTxt" class="btn ghost"><i class="fa-solid fa-file-download"></i> Export</button>
+              <button id="deleteNote" class="btn ghost"><i class="fa-solid fa-trash-alt"></i> Delete</button>
+              <button id="saveNote" class="btn primary"><i class="fa-solid fa-save"></i> Save</button>
+            </div>
+          </div>
+
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <input id="fileImport" type="file" accept=".txt" style="display:none">
+
+  <script>
+    // Basic notes app using localStorage
+    const STORAGE_KEY = 'ti_notes_v1';
+    const notesListEl = document.getElementById('notesList');
+    const newNoteBtn = document.getElementById('newNote');
+    const noteTitleEl = document.getElementById('noteTitle');
+    const contentEl = document.getElementById('content');
+    const saveNoteBtn = document.getElementById('saveNote');
+    const deleteNoteBtn = document.getElementById('deleteNote');
+    const exportTxtBtn = document.getElementById('exportTxt');
+    const exportAllBtn = document.getElementById('exportAll');
+    const clearAllBtn = document.getElementById('clearAll');
+    const searchInput = document.getElementById('searchInput');
+    const sortBy = document.getElementById('sortBy');
+    const importTxt = document.getElementById('importTxt');
+    const fileImport = document.getElementById('fileImport');
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
+    const toggleMarkdown = document.getElementById('toggleMarkdown');
+
+    let notes = []; // {id,title,content,createdAt,updatedAt}
+    let activeId = null;
+    let isMarkdown = false;
+
+    // init
+    loadNotes();
+    renderNotesList();
+    bindToolbar();
+
+    // Utility
+    function uid(){ return 'n_' + Math.random().toString(36).slice(2,9); }
+    function now(){ return Date.now(); }
+
+    function saveToStorage(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
+    function loadNotes(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){ try{ notes = JSON.parse(raw); }catch(e){ notes=[]; }}
+    }
+
+    function createNote(){
+      const n = { id: uid(), title: 'Untitled note', content: '', createdAt: now(), updatedAt: now() };
+      notes.unshift(n);
+      saveToStorage();
+      renderNotesList();
+      openNote(n.id);
+    }
+
+    function openNote(id){
+      const n = notes.find(x=>x.id===id);
+      if(!n) return;
+      activeId = id;
+      noteTitleEl.value = n.title;
+      contentEl.innerHTML = n.content || '';
+      updateMeta();
+      renderNotesList();
+      contentEl.focus();
+    }
+
+    function saveActiveNote(){
+      if(!activeId) return;
+      const n = notes.find(x=>x.id===activeId);
+      if(!n) return;
+      n.title = noteTitleEl.value || 'Untitled note';
+      n.content = contentEl.innerHTML;
+      n.updatedAt = now();
+      saveToStorage();
+      renderNotesList();
+      updateMeta('Saved');
+      setTimeout(()=>updateMeta(),1200);
+    }
+
+    function deleteActiveNote(){
+      if(!activeId) return;
+      if(!confirm('Delete this note?')) return;
+      notes = notes.filter(x=>x.id!==activeId);
+      saveToStorage();
+      activeId = null;
+      noteTitleEl.value=''; contentEl.innerHTML='';
+      renderNotesList(); updateMeta();
+    }
+
+    function renderNotesList(){
+      const q = searchInput.value.toLowerCase().trim();
+      let list = notes.slice();
+      if(q){ list = list.filter(n=> (n.title||'').toLowerCase().includes(q) || (stripHTML(n.content)||'').toLowerCase().includes(q)); }
+      if(sortBy.value==='updated') list.sort((a,b)=>b.updatedAt-a.updatedAt);
+      if(sortBy.value==='created') list.sort((a,b)=>b.createdAt-b.createdAt?b.createdAt-a.createdAt:0);
+      if(sortBy.value==='title') list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+
+      notesListEl.innerHTML = '';
+      list.forEach(n=>{
+        const el = document.createElement('div'); el.className='note-item'+(n.id===activeId?' active':''); el.setAttribute('role','listitem');
+        el.innerHTML = `<div class="note-title">${escapeHtml(n.title)}</div><div class="note-meta">${new Date(n.updatedAt).toLocaleString()}</div>`;
+        el.addEventListener('click', ()=> openNote(n.id));
+        notesListEl.appendChild(el);
+      });
+    }
+
+    function updateMeta(msg){
+      const el = document.getElementById('noteMeta');
+      if(!activeId){ el.textContent = 'No note selected'; return }
+      const n = notes.find(x=>x.id===activeId);
+      if(!n){ el.textContent = 'No note selected'; return }
+      el.textContent = msg ? msg : `Updated: ${new Date(n.updatedAt).toLocaleString()}`;
+    }
+
+    // bind UI
+    newNoteBtn.addEventListener('click', createNote);
+    saveNoteBtn.addEventListener('click', saveActiveNote);
+    deleteNoteBtn.addEventListener('click', deleteActiveNote);
+    searchInput.addEventListener('input', renderNotesList);
+    sortBy.addEventListener('change', renderNotesList);
+
+    // autosave (debounced)
+    let autosaveTimer = null;
+    function debouncedSave(){ clearTimeout(autosaveTimer); autosaveTimer = setTimeout(saveActiveNote, 800); }
+    noteTitleEl.addEventListener('input', debouncedSave);
+    contentEl.addEventListener('input', debouncedSave);
+
+    // toolbar actions using document.execCommand (simple, widely supported)
+    function bindToolbar(){
+      document.querySelectorAll('.toolbar button[data-cmd]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const cmd = btn.dataset.cmd;
+          if(cmd==='blockquote'){ document.execCommand('formatBlock', false, 'blockquote'); }
+          else document.execCommand(cmd, false, null);
+          contentEl.focus();
+        });
+      });
+      undoBtn.addEventListener('click', ()=>{ document.execCommand('undo'); });
+      redoBtn.addEventListener('click', ()=>{ document.execCommand('redo'); });
+    }
+
+    // simple markdown preview toggle (client-side)
+    toggleMarkdown.addEventListener('click', ()=>{
+      isMarkdown = !isMarkdown;
+      toggleMarkdown.classList.toggle('active', isMarkdown);
+      if(isMarkdown){
+        // convert current content (raw html) -> text -> markdown preview
+        const text = stripHTML(contentEl.innerHTML);
+        contentEl.dataset._html = contentEl.innerHTML;
+        contentEl.textContent = markedPreview(text);
+        contentEl.contentEditable = 'false';
+      } else {
+        contentEl.contentEditable = 'true';
+        if(contentEl.dataset._html) contentEl.innerHTML = contentEl.dataset._html;
+      }
+    });
+
+    // minimal markdown renderer for preview (supports headings, bold, italics, lists)
+    function markedPreview(text){
+      // escape then replace simple syntax
+      let s = escapeHtml(text);
+      // headings
+      s = s.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      s = s.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      s = s.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      // bold/italic
+      s = s.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+      s = s.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+      // inline code
+      s = s.replace(/`([^`]+)`/gim, '<code>$1</code>');
+      // links
+      s = s.replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>');
+      // line breaks
+      s = s.replace(/\n/g, '<br>');
+      return s;
+    }
+
+    // export active note as .txt or pdf
+    exportTxtBtn.addEventListener('click', ()=>{
+      if(!activeId) return alert('No note selected');
+      const n = notes.find(x=>x.id===activeId);
+      const text = stripHTML(n.content || '') || '';
+      downloadBlob(new Blob([text], {type:'text/plain'}), (n.title || 'note') + '.txt');
+    });
+
+    exportAllBtn.addEventListener('click', ()=>{
+      if(!notes.length) return alert('No notes to export');
+      const zipContent = notes.map(n=> `--- ${n.title} ---\n${stripHTML(n.content)}\n\n`).join('\n');
+      downloadBlob(new Blob([zipContent], {type:'text/plain'}), 'notes-export.txt');
+    });
+
+    // import txt
+    importTxt.addEventListener('click', ()=> fileImport.click());
+    fileImport.addEventListener('change', (e)=>{
+      const f = e.target.files[0]; if(!f) return; const reader = new FileReader();
+      reader.onload = ()=>{ const n = { id: uid(), title: f.name.replace(/\.[^/.]+$/, ''), content: escapeHtml(reader.result).replace(/\n/g,'<br>'), createdAt: now(), updatedAt: now() }; notes.unshift(n); saveToStorage(); renderNotesList(); openNote(n.id); };
+      reader.readAsText(f); fileImport.value='';
+    });
+
+    // delete all notes
+    clearAllBtn.addEventListener('click', ()=>{ if(!confirm('Clear all notes? This cannot be undone.')) return; notes=[]; saveToStorage(); renderNotesList(); activeId=null; noteTitleEl.value=''; contentEl.innerHTML=''; updateMeta(); });
+
+    // download helper
+    function downloadBlob(blob, filename){ const a = document.createElement('a'); const url = URL.createObjectURL(blob); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+    // strip html to plain text
+    function stripHTML(html){ const tmp = document.createElement('div'); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || ''; }
+    function escapeHtml(s){ return s.replace(/[&<>\"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":"&#39;"}[c] }); }
+
+    // simple search: Enter to create new note
+    searchInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ if(!notes.length) createNote(); else { const first = notes[0]; openNote(first.id);} } });
+
+    // keyboard shortcuts
+    document.addEventListener('keydown', (e)=>{
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); saveActiveNote(); }
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='n'){ e.preventDefault(); createNote(); }
+      if(e.key === 'Escape'){ contentEl.blur(); }
+    });
+
+    // initial demo: create one if empty
+    if(!notes.length){ createNote(); }
+
+    // minimal autosave on unload
+    window.addEventListener('beforeunload', ()=> saveToStorage());
+  </script>
+</body>
+</html>
