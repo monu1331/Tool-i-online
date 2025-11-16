@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>URL Encoder / Decoder — Tool i online</title>
+  <meta name="description" content="Encode and decode URLs and query strings. Build and parse query parameters, encode components or full URLs. Sky-blue themed and responsive." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --sky:#00bcd4; --sky-dark:#0aa3b0; --bg:#f5fcff; --card:#fff; --muted:#445; --radius:12px; --shadow:0 12px 30px rgba(10,120,140,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#052}
+    .wrap{max-width:1100px;margin:18px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--sky);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 380px;gap:14px;padding:16px}
+    .pane{display:flex;flex-direction:column;gap:8px}
+    label.small{font-size:0.9rem;color:var(--muted)}
+    textarea,input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:0.95rem}
+    textarea{min-height:160px;resize:vertical;font-family:ui-monospace, monospace}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    .preview{background:linear-gradient(180deg,#fff,#f8feff);padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);min-height:120px;white-space:pre-wrap;overflow:auto}
+
+    .kv{display:flex;gap:8px;margin-top:8px}
+    .kv input{flex:1}
+    .kv .small{width:90px}
+
+    .history{max-height:36vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:120px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,input:focus,textarea:focus{outline:3px solid rgba(0,188,212,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>URL Encoder / Decoder</h1>
+        <p class="lead">Encode/decode full URLs or individual components, parse/build query strings, and manage parameters easily. Sky-blue themed — responsive and privacy-first.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <button id="encodeBtn" class="btn primary"><i class="fa-solid fa-link"></i> Encode</button>
+        <button id="decodeBtn" class="btn ghost"><i class="fa-solid fa-unlink"></i> Decode</button>
+        <div class="spacer"></div>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+      </div>
+
+      <div class="layout">
+        <section class="pane">
+          <label class="small">Input URL or text</label>
+          <textarea id="inputArea" placeholder="Paste a URL or text here..."></textarea>
+
+          <div class="options">
+            <label class="option small"><input type="radio" name="mode" value="component" checked> Encode/Decode Component (encodeURIComponent)</label>
+            <label class="option small"><input type="radio" name="mode" value="full"> Encode/Decode Full URL (encodeURI)</label>
+            <label class="option small"><input type="checkbox" id="autoDetect"> Auto-detect on paste</label>
+          </div>
+
+          <div style="margin-top:10px">
+            <label class="small">Build / Edit query string</label>
+            <div id="params" aria-label="query parameters">
+              <!-- key-value rows are added dynamically -->
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="keyInput" placeholder="key (e.g. utm_source)" />
+              <input id="valInput" placeholder="value" />
+              <button id="addParam" class="btn ghost">Add</button>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="buildQuery" class="btn ghost">Build Query</button>
+              <button id="parseQuery" class="btn ghost">Parse Query</button>
+              <button id="clearParams" class="btn ghost">Clear Params</button>
+            </div>
+          </div>
+
+          <div class="controls" style="margin-top:12px">
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="saveBtn" class="btn ghost">Save to history</button>
+            <div style="flex:1"></div>
+            <label class="small">Auto-copy <input type="checkbox" id="autoCopy"></label>
+          </div>
+        </section>
+
+        <aside class="pane">
+          <div class="meta"><label class="small">Output</label><div class="small" id="info">0 bytes</div></div>
+          <div id="outputArea" class="preview">Encoded/decoded output will appear here.</div>
+
+          <div style="margin-top:12px">
+            <div class="small">History</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear history</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const inputArea = document.getElementById('inputArea');
+    const encodeBtn = document.getElementById('encodeBtn');
+    const decodeBtn = document.getElementById('decodeBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const outputArea = document.getElementById('outputArea');
+    const info = document.getElementById('info');
+    const autoCopy = document.getElementById('autoCopy');
+    const autoDetect = document.getElementById('autoDetect');
+
+    const paramsContainer = document.getElementById('params');
+    const keyInput = document.getElementById('keyInput');
+    const valInput = document.getElementById('valInput');
+    const addParam = document.getElementById('addParam');
+    const buildQuery = document.getElementById('buildQuery');
+    const parseQuery = document.getElementById('parseQuery');
+    const clearParams = document.getElementById('clearParams');
+
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistory = document.getElementById('clearHistory');
+    const exportHistory = document.getElementById('exportHistory');
+
+    const STORAGE = 'ti_url_hist_v1';
+
+    function updateInfo(text){ info.textContent = text ? new Blob([text]).size + ' bytes' : '0 bytes'; }
+
+    function getMode(){ return document.querySelector('input[name="mode"]:checked').value; }
+
+    function encodeText(txt){ if(getMode() === 'component') return encodeURIComponent(txt); return encodeURI(txt); }
+    function decodeText(txt){ try{ if(getMode() === 'component') return decodeURIComponent(txt); return decodeURI(txt); }catch(e){ return null; } }
+
+    encodeBtn.addEventListener('click', ()=>{
+      const txt = inputArea.value || '';
+      if(!txt){ alert('Enter text or URL to encode'); return; }
+      const out = encodeText(txt);
+      outputArea.textContent = out;
+      updateInfo(out);
+      if(autoCopy.checked) navigator.clipboard.writeText(out).catch(()=>{});
+      saveHistoryEntry('encode', txt, out);
+    });
+
+    decodeBtn.addEventListener('click', ()=>{
+      const txt = inputArea.value || '';
+      if(!txt){ alert('Enter encoded text to decode'); return; }
+      const out = decodeText(txt);
+      if(out === null){ alert('Decoding failed. Input may not be valid or wrong mode.'); return; }
+      outputArea.textContent = out;
+      updateInfo(out);
+      if(autoCopy.checked) navigator.clipboard.writeText(out).catch(()=>{});
+      saveHistoryEntry('decode', txt, out);
+    });
+
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(outputArea.textContent || ''); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000);}catch(e){ alert('Copy failed'); } });
+
+    downloadBtn.addEventListener('click', ()=>{ const out = outputArea.textContent || ''; if(!out) return alert('Nothing to download'); const blob = new Blob([out], {type:'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'output.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    // params management
+    function addParamRow(key='', val=''){
+      const row = document.createElement('div'); row.className = 'kv';
+      const k = document.createElement('input'); k.placeholder = 'key'; k.value = key;
+      const v = document.createElement('input'); v.placeholder = 'value'; v.value = val;
+      const btn = document.createElement('button'); btn.className='btn ghost'; btn.textContent='Remove'; btn.type='button';
+      btn.addEventListener('click', ()=>{ row.remove(); });
+      row.appendChild(k); row.appendChild(v); row.appendChild(btn); paramsContainer.appendChild(row);
+    }
+
+    addParam.addEventListener('click', ()=>{ const k = keyInput.value.trim(); const v = valInput.value; if(!k){ alert('Key required'); return; } addParamRow(k,v); keyInput.value=''; valInput.value=''; });
+
+    buildQuery.addEventListener('click', ()=>{
+      const pairs = Array.from(paramsContainer.querySelectorAll('.kv')).map(r=>{ const inputs = r.querySelectorAll('input'); return [inputs[0].value, inputs[1].value]; }).filter(p=>p[0]);
+      const qs = pairs.map(([k,v])=> `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+      const out = qs ? ('?' + qs) : '';
+      outputArea.textContent = out;
+      updateInfo(out);
+      if(autoCopy.checked) navigator.clipboard.writeText(out).catch(()=>{});
+      saveHistoryEntry('build', qs, out);
+    });
+
+    parseQuery.addEventListener('click', ()=>{
+      const txt = inputArea.value || '';
+      // extract query string from URL or accept raw
+      const q = (txt.includes('?') ? txt.split('?').slice(1).join('?') : txt).replace(/^\?/, '');
+      if(!q){ alert('No query string found in input'); return; }
+      const params = new URLSearchParams(q);
+      paramsContainer.innerHTML = '';
+      for(const [k,v] of params.entries()) addParamRow(k, v);
+    });
+
+    clearParams.addEventListener('click', ()=>{ if(confirm('Clear all parameters?')) paramsContainer.innerHTML=''; });
+
+    inputArea.addEventListener('paste', (e)=>{ if(!autoDetect.checked) return; setTimeout(()=>{ const txt = inputArea.value || ''; // if looks encoded and mode is component maybe set mode? we just show
+        if(txt && /^[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]+$/.test(txt)){
+          // no-op; placeholder for future heuristics
+        }
+      }, 50); });
+
+    // history
+    function saveHistoryEntry(type, input, output){ try{ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), type, input: input.slice(0,200), output: (output||'').slice(0,200)}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); }catch(e){} }
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No history</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${it.type.toUpperCase()} · ${new Date(it.ts).toLocaleString()}</div><div class="small">In: ${escapeHtml(it.input)}</div><div class="small">Out: ${escapeHtml(it.output)}</div>`; el.addEventListener('click', ()=>{ outputArea.textContent = it.output; updateInfo(it.output); }); historyList.appendChild(el); }); }
+
+    clearHistory.addEventListener('click', ()=>{ if(confirm('Clear history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+    exportHistory.addEventListener('click', ()=>{ const raw = localStorage.getItem(STORAGE) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'url-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    clearBtn.addEventListener('click', ()=>{ if(!inputArea.value && !outputArea.textContent) return; if(!confirm('Clear input and output?')) return; inputArea.value=''; outputArea.textContent=''; paramsContainer.innerHTML=''; updateInfo(''); });
+    saveBtn.addEventListener('click', ()=>{ const out = outputArea.textContent || ''; if(!out) return alert('Nothing to save'); saveHistoryEntry('manual', (inputArea.value||'').slice(0,200), out); alert('Saved to history'); });
+
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(outputArea.textContent || ''); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000);}catch(e){ alert('Copy failed'); } });
+
+    function escapeHtml(s){ return (s||'').toString().replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+    // init
+    (function init(){ renderHistory(); outputArea.textContent = 'Encoded/decoded output will appear here.'; updateInfo(''); addParamRow('utm_source','newsletter'); addParamRow('utm_medium','email'); })();
+
+  </script>
+</body>
+</html>
