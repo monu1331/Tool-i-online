@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SkyBlue Regex Tester</title>
+  <style>
+    :root{
+      --sky: #69b7ff;
+      --sky-600: #3fa9ff;
+      --bg: #f6fbff;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent-contrast: #012a4a;
+      --radius:12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+      --glass: rgba(255,255,255,0.6);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{background:linear-gradient(180deg,var(--bg),#eef8ff);color:#072033}
+
+    .wrap{max-width:1200px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr 420px;gap:18px}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 30px rgba(2,48,71,0.06);padding:16px;display:flex;flex-direction:column}
+
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--sky),var(--sky-600));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-family:var(--mono)}
+    header h1{font-size:18px;margin:0}
+    header p{margin:0;color:var(--muted);font-size:13px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .input, textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(2,48,71,0.06);font-family:inherit}
+    textarea{min-height:120px;resize:vertical;font-family:var(--mono);font-size:13px}
+
+    .row{display:flex;gap:8px}
+    .col{flex:1}
+
+    .panel{display:flex;flex-direction:column;gap:8px}
+
+    .label{font-size:13px;color:var(--muted);font-weight:600}
+
+    .flags{display:flex;gap:8px;align-items:center}
+    .flag{padding:6px 8px;border-radius:8px;border:1px solid rgba(2,48,71,0.04);cursor:pointer;font-family:var(--mono)}
+    .flag.active{background:linear-gradient(180deg,var(--sky),var(--sky-600));color:white;box-shadow:0 8px 20px rgba(63,169,255,0.12)}
+
+    .actions{display:flex;gap:8px}
+    .btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;background:linear-gradient(180deg,#fff,#f4fbff);font-weight:700}
+    .btn.primary{background:linear-gradient(180deg,var(--sky),var(--sky-600));color:white;box-shadow:0 8px 26px rgba(63,169,255,0.14)}
+
+    .preview{background:#fbfeff;border-radius:8px;padding:12px;border:1px solid rgba(7,55,95,0.04);min-height:140px;overflow:auto}
+
+    .match{background:linear-gradient(90deg,rgba(99,179,255,0.22),rgba(63,169,255,0.12));padding:1px 2px;border-radius:4px}
+    .capture{background:linear-gradient(90deg,rgba(255,230,170,0.25),rgba(255,210,80,0.15));padding:1px 2px;border-radius:4px}
+
+    .meta{font-size:13px;color:var(--muted)}
+    .examples{display:flex;flex-direction:column;gap:8px}
+    .example{padding:8px;border-radius:8px;border:1px dashed rgba(63,169,255,0.12);cursor:pointer}
+
+    .right-col{display:flex;flex-direction:column;gap:12px}
+    .small{font-size:13px;color:var(--muted)}
+    .list{display:flex;flex-direction:column;gap:8px}
+    .item{padding:8px;border-radius:8px;background:#fbfeff;border:1px solid rgba(7,55,95,0.03)}
+
+    .error{color:#9b1c1c;background:#fff2f2;padding:10px;border-radius:8px;border:1px solid rgba(155,28,28,0.08)}
+
+    footer{margin-top:12px;font-size:13px;color:var(--muted)}
+
+    @media (max-width:1000px){.wrap{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <div class="logo">RT</div>
+        <div>
+          <h1>SkyBlue Regex Tester</h1>
+          <p>Test JavaScript regular expressions quickly — live matching, groups, replace, and examples.</p>
+        </div>
+      </header>
+
+      <div class="panel">
+        <div>
+          <div class="label">Regular expression</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input id="pattern" class="input" placeholder="e.g. (https?:\\/\\/[^ \n]+)" />
+            <select id="engine" style="width:130px">
+              <option value="js">JavaScript (ECMAScript)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <div class="flags">
+              <div class="flag" data-flag="g" id="flag-g">g</div>
+              <div class="flag" data-flag="i" id="flag-i">i</div>
+              <div class="flag" data-flag="m" id="flag-m">m</div>
+              <div class="flag" data-flag="s" id="flag-s">s</div>
+              <div class="flag" data-flag="u" id="flag-u">u</div>
+              <div class="flag" data-flag="y" id="flag-y">y</div>
+            </div>
+            <div class="small">Flags — click to toggle</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="label">Test string</div>
+          <textarea id="testString" placeholder="Paste or type text to test against"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="flex:1">
+            <div class="label">Replace with (optional)</div>
+            <input id="replaceWith" class="input" placeholder="Use $1, $2 for groups" />
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button id="testBtn" class="btn primary">Test</button>
+            <button id="replaceBtn" class="btn">Replace</button>
+          </div>
+        </div>
+
+        <div id="errorMsg" style="display:none" class="error"></div>
+
+        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:6px">
+          <div class="meta">Matches: <span id="matchCount">0</span></div>
+          <div class="meta">Last tested: <span id="lastTested">—</span></div>
+        </div>
+
+        <div class="label" style="margin-top:8px">Live preview (matches highlighted)</div>
+        <div id="preview" class="preview"></div>
+
+        <footer>
+          Tip: Press <strong>Enter</strong> in the pattern field to test. Use <code>$1</code>, <code>$2</code> in replacements.
+        </footer>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-weight:700">Groups & Matches</div>
+          <div class="small">Click a match to copy</div>
+        </div>
+        <div id="matchesList" class="list"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-weight:700">Examples</div>
+          <div class="small">Click to load</div>
+        </div>
+        <div class="examples">
+          <div class="example" data-pat="(https?:\\/\\/[^\s]+)" data-flags="g">Extract URLs</div>
+          <div class="example" data-pat="\\b(\w+)@(\w+\.[a-z]{2,})\\b" data-flags="gi">Email capture (user & domain)</div>
+          <div class="example" data-pat="\\b(\d{4})-(\d{2})-(\d{2})\\b" data-flags="g">Date Y-M-D</div>
+          <div class="example" data-pat="^\\s+|\\s+$" data-flags="gm">Trim line whitespace</div>
+          <div class="example" data-pat="(.)\\1+" data-flags="g">Repeated characters</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:6px">Tools</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="copyPattern" class="btn">Copy Pattern</button>
+          <button id="copyMatches" class="btn">Copy Matches</button>
+          <button id="downloadResult" class="btn">Download Result</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Utilities
+const $ = (sel)=> document.querySelector(sel);
+const qs = (sel)=> Array.from(document.querySelectorAll(sel));
+
+const patternEl = $('#pattern');
+const testEl = $('#testString');
+const previewEl = $('#preview');
+const matchCountEl = $('#matchCount');
+const lastTestedEl = $('#lastTested');
+const matchesListEl = $('#matchesList');
+const errorMsgEl = $('#errorMsg');
+const replaceEl = $('#replaceWith');
+
+let flags = {g:false,i:false,m:false,s:false,u:false,y:false};
+
+function getActiveFlags(){ return Object.keys(flags).filter(k=>flags[k]).join(''); }
+
+function buildRegex(){
+  const pat = patternEl.value;
+  const f = getActiveFlags();
+  try{
+    const re = new RegExp(pat, f);
+    errorMsgEl.style.display='none';
+    return re;
+  }catch(e){
+    errorMsgEl.style.display='block';
+    errorMsgEl.textContent = 'Invalid regex: ' + e.message;
+    return null;
+  }
+}
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function highlightMatches(){
+  const re = buildRegex();
+  const text = testEl.value || '';
+  if(!re) return;
+
+  const isGlobal = re.flags.includes('g');
+  let out = '';
+  let lastIndex = 0;
+  let matches = [];
+
+  if(isGlobal){
+    let m;
+    while((m = re.exec(text)) !== null){
+      matches.push(m);
+      if(m[0].length === 0) { // avoid infinite loop on zero-length matches
+        re.lastIndex++;
+      }
+    }
+  } else {
+    const m = re.exec(text);
+    if(m) matches.push(m);
+  }
+
+  // build highlighted HTML with capture groups
+  let cursor = 0;
+  matches.forEach((m, idx)=>{
+    const start = m.index;
+    const end = start + m[0].length;
+    // append text before
+    out += escapeHtml(text.slice(cursor, start));
+    // highlighted match with nested groups
+    let inner = escapeHtml(m[0]);
+    // if there are capture groups, annotate them
+    if(m.length > 1){
+      // naive: replace group substrings with span (works when groups don't overlap oddly)
+      let groupCursor = 0;
+      let repr = '';
+      for(let g=1; g<m.length; g++){
+        const val = m[g] === undefined ? '' : m[g];
+        if(val === '') continue;
+        const idxInMatch = m[0].indexOf(val, groupCursor);
+        if(idxInMatch === -1) continue;
+        repr += escapeHtml(m[0].slice(groupCursor, idxInMatch));
+        repr += `<span class=\"capture\">${escapeHtml(val)}</span>`;
+        groupCursor = idxInMatch + val.length;
+      }
+      repr += escapeHtml(m[0].slice(groupCursor));
+      inner = repr;
+    }
+    out += `<span class="match">${inner}</span>`;
+    cursor = end;
+  });
+  out += escapeHtml(text.slice(cursor));
+
+  previewEl.innerHTML = out || '<span class="small">No text to preview</span>';
+
+  // populate matches list
+  matchesListEl.innerHTML = '';
+  matches.forEach((m, idx)=>{
+    const item = document.createElement('div');
+    item.className = 'item';
+    const header = document.createElement('div');
+    header.style.fontWeight='700';
+    header.textContent = `Match ${idx+1}: \"${m[0]}\" (at ${m.index})`;
+    item.appendChild(header);
+    if(m.length>1){
+      const gwrap = document.createElement('div');
+      gwrap.style.marginTop='6px';
+      for(let g=1; g<m.length; g++){
+        const gdiv = document.createElement('div');
+        gdiv.textContent = `$${g}: ${m[g]}`;
+        gdiv.style.fontFamily='var(--mono)';
+        gdiv.style.marginTop='4px';
+        gwrap.appendChild(gdiv);
+      }
+      item.appendChild(gwrap);
+    }
+    item.addEventListener('click', ()=>{ navigator.clipboard.writeText(m[0]).then(()=>{ alert('Copied: ' + m[0]) }) });
+    matchesListEl.appendChild(item);
+  });
+
+  matchCountEl.textContent = matches.length;
+  lastTestedEl.textContent = new Date().toLocaleTimeString();
+}
+
+function performReplace(){
+  const re = buildRegex();
+  if(!re) return;
+  const text = testEl.value || '';
+  try{
+    const result = text.replace(re, replaceEl.value);
+    testEl.value = result;
+    highlightMatches();
+    alert('Replacement applied');
+  }catch(e){
+    errorMsgEl.style.display='block';
+    errorMsgEl.textContent = 'Replace error: ' + e.message;
+  }
+}
+
+// Flags toggle
+qs('.flag').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    const f = el.dataset.flag;
+    flags[f] = !flags[f];
+    el.classList.toggle('active', flags[f]);
+  });
+});
+
+// Buttons
+$('#testBtn').addEventListener('click', highlightMatches);
+$('#replaceBtn').addEventListener('click', performReplace);
+
+// Extras
+$('#pattern').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); highlightMatches(); } });
+$('#testString').addEventListener('input', ()=>{ /* live update */ highlightMatches(); });
+$('#replaceWith').addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); performReplace(); } });
+
+// Examples loader
+qs('.example').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    patternEl.value = el.dataset.pat;
+    // reset flags
+    Object.keys(flags).forEach(k=>flags[k]=false);
+    qs('.flag').forEach(fel=>fel.classList.remove('active'));
+    if(el.dataset.flags) el.dataset.flags.split('').forEach(ch=>{ flags[ch]=true; document.querySelector(`.flag[data-flag=\\"${ch}\\"]`).classList.add('active'); });
+    highlightMatches();
+  });
+});
+
+// Tools
+$('#copyPattern').addEventListener('click', ()=> navigator.clipboard.writeText(patternEl.value).then(()=> alert('Pattern copied')));
+$('#copyMatches').addEventListener('click', ()=>{
+  const items = Array.from(matchesListEl.querySelectorAll('.item'));
+  const text = items.map(i=>i.querySelector('div').textContent).join('\n');
+  navigator.clipboard.writeText(text).then(()=> alert('Matches copied'));
+});
+$('#downloadResult').addEventListener('click', ()=>{
+  const blob = new Blob([testEl.value||''], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'regex-result.txt';
+  a.click();
+});
+
+// Initialize with sample
+patternEl.value = '(https?:\\/\\/[^\\s]+)';
+$('#flag-g').classList.add('active'); flags['g']=true;
+testEl.value = 'Visit https://example.com and http://site.org for info.';
+highlightMatches();
+</script>
+</body>
+</html>
