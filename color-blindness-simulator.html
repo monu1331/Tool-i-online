@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Blindness Simulator — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --pink:#D81B60; --muted:#666; --bg:#fff; --card-shadow:0 10px 28px rgba(0,0,0,0.06); --radius:12px; --container:1100px }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#fff,#fbfbfb);color:#222;padding:20px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:var(--card-shadow)}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:14px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .drop{border:2px dashed rgba(216,27,96,0.12);border-radius:10px;padding:14px;text-align:center;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+    .drop.drag{background:rgba(216,27,96,0.03);border-color:var(--pink)}
+    .file-input{display:none}
+
+    .canvas-wrap{position:relative;border-radius:8px;overflow:hidden;border:1px solid #eee;background:#fafafa;min-height:240px}
+    canvas{display:block;max-width:100%;height:auto}
+
+    .controls{display:flex;flex-direction:column;gap:10px}
+    select,input[type=range],button{padding:10px;border-radius:10px;border:1px solid #eee}
+    .btn{background:var(--pink);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .muted{color:var(--muted);font-size:13px}
+
+    .compare{display:flex;gap:12px;align-items:center}
+    .split-wrap{position:relative;overflow:hidden;border-radius:8px;border:1px solid #f0f0f0}
+    .split-img{display:block;width:100%;height:auto}
+    .split-handle{position:absolute;top:0;bottom:0;width:4px;background:linear-gradient(180deg,rgba(0,0,0,0.2),rgba(255,255,255,0.2));left:50%;transform:translateX(-50%);cursor:ew-resize}
+
+    .info{font-size:13px;color:var(--muted)}
+
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Color Blindness Simulator</h1>
+        <div class="lead">Simulate common color vision deficiencies (Protanopia, Deuteranopia, Tritanopia, Achromatopsia). Pink-themed, responsive and client-side.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div class="drop" id="drop" aria-label="Drop image here or click to choose">
+            <div style="font-weight:700">Drop an image here</div>
+            <div class="muted">or <button id="chooseBtn" class="btn" type="button" style="background:#fff;color:var(--pink);border:1px solid rgba(211,47,47,0.12)">Choose file</button></div>
+            <div class="muted">Supported: JPG, PNG, WebP — max 20 MB</div>
+            <input id="fileInput" class="file-input" type="file" accept="image/*">
+          </div>
+
+          <div style="margin-top:12px" class="canvas-wrap card" id="canvasWrap">
+            <div style="padding:8px;" class="muted">Preview</div>
+            <div id="splitWrap" class="split-wrap" style="width:100%">
+              <img id="origImg" class="split-img" src="" alt="original" style="display:none">
+              <canvas id="simCanvas" style="display:none"></canvas>
+              <div id="handle" class="split-handle" style="display:none"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 8px 0 8px">
+              <div class="muted">Use slider or drag handle to compare</div>
+              <div>
+                <label class="muted">Split</label>
+                <input id="split" type="range" min="0" max="100" value="50">
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button id="downloadBtn" class="btn" style="display:none">Download Simulated</button>
+            <button id="resetBtn" class="btn" style="background:#fff;color:var(--pink);border:1px solid rgba(211,47,47,0.12)">Reset</button>
+          </div>
+
+          <div style="margin-top:8px" class="info">All simulations run locally in your browser.</div>
+        </section>
+
+        <aside>
+          <div class="controls">
+            <label class="muted">Simulation type</label>
+            <select id="typeSelect">
+              <option value="protanopia">Protanopia (red-blind)</option>
+              <option value="deuteranopia">Deuteranopia (green-blind)</option>
+              <option value="tritanopia">Tritanopia (blue-blind)</option>
+              <option value="achromatopsia">Achromatopsia (monochrome)</option>
+            </select>
+
+            <label class="muted">Intensity</label>
+            <input id="intensity" type="range" min="0" max="100" value="100">
+
+            <label class="muted">Compare mode</label>
+            <select id="compareMode">
+              <option value="side-by-side">Split (drag)</option>
+              <option value="overlay">Overlay</option>
+            </select>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="applyBtn" class="btn">Apply Simulation</button>
+              <button id="autoApply" class="btn" style="background:#fff;color:var(--pink);border:1px solid rgba(211,47,47,0.12)">Auto Apply</button>
+            </div>
+
+            <div style="margin-top:12px">
+              <div class="muted">About</div>
+              <div class="muted" style="font-size:13px;margin-top:6px">This tool uses color transformation matrices to approximate common types of color vision deficiency. Results are approximations for visualization and accessibility testing.</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+<script>
+  // color matrices from Brettel/Viénot approximations
+  const MATRICES = {
+    protanopia: [
+      [0.56667,0.43333,0],
+      [0.55833,0.44167,0],
+      [0,0.24167,0.75833]
+    ],
+    deuteranopia: [
+      [0.625,0.375,0],
+      [0.7,0.3,0],
+      [0,0.3,0.7]
+    ],
+    tritanopia: [
+      [0.95,0.05,0],
+      [0,0.43333,0.56667],
+      [0,0.475,0.525]
+    ],
+    achromatopsia: [
+      [0.299,0.587,0.114],
+      [0.299,0.587,0.114],
+      [0.299,0.587,0.114]
+    ]
+  };
+
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
+  const chooseBtn = document.getElementById('chooseBtn');
+  const origImg = document.getElementById('origImg');
+  const simCanvas = document.getElementById('simCanvas');
+  const handle = document.getElementById('handle');
+  const split = document.getElementById('split');
+  const typeSelect = document.getElementById('typeSelect');
+  const intensity = document.getElementById('intensity');
+  const applyBtn = document.getElementById('applyBtn');
+  const autoApply = document.getElementById('autoApply');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const compareMode = document.getElementById('compareMode');
+  const splitWrap = document.getElementById('splitWrap');
+
+  let img = null; let auto = false; let simBlob = null;
+
+  chooseBtn.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', e=> loadFile(e.target.files[0]));
+
+  ;['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('drag'); }));
+  ;['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('drag'); }));
+  drop.addEventListener('drop', e=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) loadFile(f); });
+
+  function loadFile(f){ if(!f) return; if(!f.type.startsWith('image/')){ alert('Please select an image'); return; } if(f.size > 20*1024*1024 && !confirm('File is large. Continue?')) return; const url = URL.createObjectURL(f); origImg.onload = ()=>{ img = origImg; prepareCanvases(); if(auto) applySimulation(); }; origImg.src = url; origImg.style.display='block'; }
+
+  function prepareCanvases(){ // size canvas to image display size
+    const rect = splitWrap.getBoundingClientRect(); const w = Math.min(img.naturalWidth, rect.width); const ratio = w / img.naturalWidth; const drawW = Math.round(img.naturalWidth * ratio); const drawH = Math.round(img.naturalHeight * ratio);
+    simCanvas.width = drawW; simCanvas.height = drawH; simCanvas.style.display='block'; simCanvas.style.width = '100%'; simCanvas.style.height = 'auto'; // position overlay
+    // set origImg width to match canvas drawing width
+    origImg.style.width = '100%';
+    // show handle
+    handle.style.display='block';
+    // set initial split
+    updateSplit(Number(split.value));
+  }
+
+  function applySimulation(){ if(!img) return; const mat = MATRICES[typeSelect.value] || MATRICES.deuteranopia; const ctx = simCanvas.getContext('2d'); // draw image to temp canvas sized to simCanvas
+    const w = simCanvas.width; const h = simCanvas.height; const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h; const tctx = tmp.getContext('2d'); tctx.drawImage(img, 0, 0, w, h); try{ const id = tctx.getImageData(0,0,w,h); const data = id.data; const strength = Number(intensity.value)/100;
+      for(let i=0;i<data.length;i+=4){ const r=data[i], g=data[i+1], b=data[i+2]; // apply matrix
+        const nr = mat[0][0]*r + mat[0][1]*g + mat[0][2]*b;
+        const ng = mat[1][0]*r + mat[1][1]*g + mat[1][2]*b;
+        const nb = mat[2][0]*r + mat[2][1]*g + mat[2][2]*b;
+        // blend based on intensity
+        data[i]   = Math.round(r + (nr - r) * strength);
+        data[i+1] = Math.round(g + (ng - g) * strength);
+        data[i+2] = Math.round(b + (nb - b) * strength);
+      }
+      tctx.putImageData(id,0,0);
+      // paint into simCanvas
+      const sctx = simCanvas.getContext('2d'); sctx.clearRect(0,0,w,h); sctx.drawImage(tmp,0,0);
+      // update sim blob for download
+      simCanvas.toBlob(b=>{ simBlob = b; downloadBtn.style.display = 'inline-block'; }, 'image/png');
+    }catch(e){ alert('Simulation failed: '+e.message); }
+  }
+
+  applyBtn.addEventListener('click', applySimulation);
+  autoApply.addEventListener('click', ()=>{ auto = !auto; autoApply.textContent = auto ? 'Auto Apply: ON' : 'Auto Apply'; if(auto) applySimulation(); });
+  intensity.addEventListener('input', ()=>{ if(auto) applySimulation(); });
+  typeSelect.addEventListener('change', ()=>{ if(auto) applySimulation(); });
+
+  downloadBtn.addEventListener('click', ()=>{ if(!simBlob) return alert('No simulated image'); const url = URL.createObjectURL(simBlob); const a = document.createElement('a'); a.href = url; a.download = 'simulated-'+typeSelect.value+'.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),5000); });
+
+  resetBtn.addEventListener('click', ()=>{ origImg.src=''; origImg.style.display='none'; simCanvas.style.display='none'; handle.style.display='none'; downloadBtn.style.display='none'; simBlob=null; });
+
+  // split handle logic
+  let dragging = false;
+  handle.addEventListener('pointerdown', e=>{ dragging = true; handle.setPointerCapture(e.pointerId); });
+  window.addEventListener('pointerup', e=>{ dragging = false; });
+  window.addEventListener('pointermove', e=>{ if(!dragging) return; const rect = splitWrap.getBoundingClientRect(); let x = e.clientX - rect.left; const pct = Math.max(0, Math.min(100, (x/rect.width)*100)); split.value = pct; updateSplit(pct); });
+  split.addEventListener('input', e=> updateSplit(Number(e.target.value)));
+
+  function updateSplit(pct){ const rect = splitWrap.getBoundingClientRect(); const w = splitWrap.clientWidth; const leftPx = (pct/100)*w; // clip original image to left part, simCanvas on top
+    // position handle
+    handle.style.left = leftPx + 'px'; // set mask for simCanvas (we'll overlay simCanvas and mask left side)
+    simCanvas.style.clip = `rect(0px, ${w}px, ${simCanvas.height}px, ${leftPx}px)`; // clip left to leftPx
+    origImg.style.clip = `rect(0px, ${leftPx}px, ${simCanvas.height}px, 0px)`; // clip original to left area
+  }
+
+  // simple fallback for browsers not supporting CSS clip on replaced elements: use object-fit and overlaying canvases
+  window.addEventListener('resize', ()=>{ if(img) prepareCanvases(); });
+
+  // init small
+  (function init(){ auto=false; autoApply.textContent='Auto Apply'; split.value=50; })();
+</script>
+</body>
+</html>
