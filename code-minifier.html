@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HTML / CSS / JS Minifier — Tool i online</title>
+  <meta name="description" content="Minify HTML, CSS and JavaScript in the browser. Sky-blue themed, responsive, professional UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --sky:#00bcd4; --sky-dark:#0aa3b0; --bg:#f5fcff; --card:#ffffff; --muted:#456; --radius:12px; --shadow:0 12px 30px rgba(10,120,140,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0a2540}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--sky);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 380px;gap:14px;padding:16px}
+    .pane{display:flex;flex-direction:column;gap:8px}
+    label.small{font-size:0.9rem;color:var(--muted)}
+    textarea{width:100%;min-height:240px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;font-size:0.95rem;resize:vertical}
+
+    .options{display:flex;flex-wrap:wrap;gap:8px}
+    .option{display:flex;gap:6px;align-items:center}
+
+    .result{background:linear-gradient(180deg,#fff,#f8feff);padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);min-height:120px;white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace}
+
+    .meta{display:flex;gap:8px;align-items:center;justify-content:space-between}
+
+    .history{max-height:36vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:180px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,textarea:focus,input:focus{outline:3px solid rgba(0,188,212,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>HTML / CSS / JS Minifier</h1>
+        <p class="lead">Minify HTML, CSS and JavaScript right in your browser. Fast, safe, and responsive. Good for bundling small snippets before publishing.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <div class="small">Choose language</div>
+        <select id="langSelect" aria-label="Select language">
+          <option value="html">HTML</option>
+          <option value="css">CSS</option>
+          <option value="js">JavaScript</option>
+        </select>
+
+        <div class="spacer"></div>
+        <button id="minifyBtn" class="btn primary"><i class="fa-solid fa-compress"></i> Minify</button>
+        <button id="beautifyBtn" class="btn ghost"><i class="fa-solid fa-arrows-rotate"></i> Beautify</button>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+      </div>
+
+      <div class="layout">
+        <section class="pane">
+          <div>
+            <label class="small" for="inputArea">Input</label>
+            <textarea id="inputArea" placeholder="Paste your HTML / CSS / JS code here..."></textarea>
+          </div>
+
+          <div class="options">
+            <label class="option"><input type="checkbox" id="removeComments" checked> <span class="small">Remove comments</span></label>
+            <label class="option"><input type="checkbox" id="collapseWhitespace" checked> <span class="small">Collapse whitespace</span></label>
+            <label class="option"><input type="checkbox" id="preservePre" > <span class="small">Preserve &lt;pre&gt; / code blocks (HTML)</span></label>
+            <label class="option"><input type="checkbox" id="mangleIds" > <span class="small">Mangle short IDs/classes (CSS/HTML) — experimental</span></label>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <div class="small">Options</div>
+            <div style="flex:1"></div>
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="saveBtn" class="btn ghost">Save</button>
+          </div>
+        </section>
+
+        <aside class="pane">
+          <div>
+            <label class="small">Result</label>
+            <div id="resultArea" class="result">Minified output will appear here</div>
+          </div>
+
+          <div class="meta" style="margin-top:12px">
+            <div class="small">Stats: <span id="inStats">0 bytes</span> → <span id="outStats">0 bytes</span> (<span id="ratio">0%</span>)</div>
+            <div style="display:flex;gap:8px">
+              <button id="historyBtn" class="btn ghost">History</button>
+              <button id="exportBtn" class="btn ghost">Export</button>
+            </div>
+          </div>
+
+          <div class="history" id="historyList" style="margin-top:10px"></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+  // Simple in-browser minifiers (lightweight, not a replacement for production-grade tools)
+  function minifyHTML(input, options){
+    // preserve content inside <pre>, <code>, <textarea>, and script/style text when requested
+    const preserveTags = ['pre','code','textarea'];
+    let placeholders = [];
+    if(options.preservePre){
+      const re = /<(pre|code|textarea)[\s\S]*?<\/\1>/gi;
+      input = input.replace(re, (match)=>{ const key = '___HTML_PLACEHOLDER_' + placeholders.length + '___'; placeholders.push(match); return key; });
+    }
+
+    let out = input;
+    if(options.removeComments){
+      // remove html comments <!-- ... --> but keep conditional comments for IE (rare) — keep if starts with [ or ends with ]
+      out = out.replace(/<!--([\s\S]*?)-->/g, (m, g1)=>{ if(/^\s*\[/.test(g1) || /\]$/.test(g1)) return m; return ''; });
+    }
+    if(options.collapseWhitespace){
+      // collapse whitespace between tags
+      out = out.replace(/\s{2,}/g, ' ');
+      out = out.replace(/>\s+</g, '><');
+      out = out.trim();
+    }
+
+    // restore placeholders
+    placeholders.forEach((val,idx)=>{ out = out.replace('___HTML_PLACEHOLDER_' + idx + '___', val); });
+    return out;
+  }
+
+  function minifyCSS(input, options){
+    let out = input;
+    if(options.removeComments){ out = out.replace(/\/\*[\s\S]*?\*\//g, ''); }
+    if(options.collapseWhitespace){
+      out = out.replace(/\s{2,}/g, ' ');
+      out = out.replace(/\s*([{:;,}])\s*/g, '$1');
+      out = out.replace(/;}/g, '}');
+      out = out.trim();
+    }
+    // simple hex color shortener: #aabbcc -> #abc
+    out = out.replace(/#([0-9a-fA-F])\1([0-9a-fA-F])\2([0-9a-fA-F])\3\b/g, '#$1$2$3');
+    return out;
+  }
+
+  function minifyJS(input, options){
+    let out = input;
+    if(options.removeComments){
+      // remove // comments
+      out = out.replace(/(^|[^:"'])\s*\/\/.*$/gm, function(m){ // attempt to avoid URLs and http
+        return m.replace(/\/\/.*$/,'');
+      });
+      // remove /* */ comments
+      out = out.replace(/\/\*[\s\S]*?\*\//g, '');
+    }
+    if(options.collapseWhitespace){
+      out = out.replace(/\s{2,}/g, ' ');
+      out = out.replace(/\s*([=+\-*/%<>\!&|?:;,{}()\[\]])\s*/g, '$1');
+      out = out.replace(/;\s*/g, ';');
+      out = out.trim();
+    }
+    return out;
+  }
+
+  // naive beautify (basic indentation)
+  function beautify(code, lang){
+    if(lang === 'html'){
+      // insert line breaks between tags
+      return code.replace(/></g, '>\n<').replace(/\n{2,}/g,'\n');
+    } else if(lang === 'css'){
+      return code.replace(/}/g, '}\n').replace(/;\s*/g,';\n').replace(/\n{2,}/g,'\n');
+    } else if(lang === 'js'){
+      return code.replace(/;\s*/g,';\n').replace(/\{\s*/g,'{\n').replace(/\n{2,}/g,'\n');
+    }
+    return code;
+  }
+
+  // helpers
+  function bytes(n){ return n + ' bytes'; }
+  function updateStats(inLen, outLen){ const ratio = inLen ? Math.round((1 - outLen / inLen) * 100) : 0; document.getElementById('inStats').textContent = bytes(inLen); document.getElementById('outStats').textContent = bytes(outLen); document.getElementById('ratio').textContent = ratio + '%'; }
+
+  // DOM
+  const langSelect = document.getElementById('langSelect');
+  const inputArea = document.getElementById('inputArea');
+  const resultArea = document.getElementById('resultArea');
+  const minifyBtn = document.getElementById('minifyBtn');
+  const beautifyBtn = document.getElementById('beautifyBtn');
+  const copyBtn = document.getElementById('copyBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const removeCommentsEl = document.getElementById('removeComments');
+  const collapseWhitespaceEl = document.getElementById('collapseWhitespace');
+  const preservePreEl = document.getElementById('preservePre');
+  const mangleIdsEl = document.getElementById('mangleIds');
+  const clearBtn = document.getElementById('clearBtn');
+  const saveBtn = document.getElementById('saveBtn');
+
+  const historyList = document.getElementById('historyList');
+  const STORAGE = 'ti_minifier_history_v1';
+
+  function doMinify(){
+    const lang = langSelect.value;
+    const input = inputArea.value || '';
+    if(!input.trim()){ resultArea.textContent = 'Nothing to minify'; updateStats(0,0); return; }
+    const options = { removeComments: removeCommentsEl.checked, collapseWhitespace: collapseWhitespaceEl.checked, preservePre: preservePreEl.checked, mangleIds: mangleIdsEl.checked };
+    const inLen = new Blob([input]).size;
+    let out = '';
+    try{
+      if(lang === 'html') out = minifyHTML(input, options);
+      else if(lang === 'css') out = minifyCSS(input, options);
+      else if(lang === 'js') out = minifyJS(input, options);
+    }catch(e){ out = 'Error: ' + e.message; }
+
+    // optional simple mangle: shorten ids/classes (very naive) — applied only if requested and for css/html
+    if(options.mangleIds && (lang === 'css' || lang === 'html')){
+      // find ids/classes in input and map to short names
+      const idRe = /#([A-Za-z_\-][A-Za-z0-9_\-]*)/g;
+      const classRe = /\.([A-Za-z_\-][A-Za-z0-9_\-]*)/g;
+      const names = new Set();
+      let m;
+      while((m = idRe.exec(out)) !== null) names.add('#' + m[1]);
+      while((m = classRe.exec(out)) !== null) names.add('.' + m[1]);
+      const mapping = {};
+      let counter = 0;
+      names.forEach(n => { const key = n[0] + n.slice(1); mapping[key] = (counter++).toString(36); });
+      // replace longer names first
+      Object.keys(mapping).sort((a,b)=>b.length-a.length).forEach(orig=>{ const short = mapping[orig]; const re = new RegExp(orig.replace(/([.*+?^${}()|\\[\\]\\])/g,'\\$1'),'g'); out = out.replace(re, (m)=> (orig[0] + short)); });
+    }
+
+    resultArea.textContent = out;
+    const outLen = new Blob([out]).size;
+    updateStats(inLen, outLen);
+    saveHistory({ts:Date.now(), lang, inLen, outLen, preview: out.slice(0,200)});
+  }
+
+  function doBeautify(){ const lang = langSelect.value; const code = inputArea.value || ''; const out = beautify(code, lang); resultArea.textContent = out; updateStats(new Blob([code]).size, new Blob([out]).size); }
+
+  minifyBtn.addEventListener('click', doMinify);
+  beautifyBtn.addEventListener('click', doBeautify);
+
+  copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(resultArea.textContent || ''); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000);}catch(e){ alert('Copy failed'); } });
+
+  downloadBtn.addEventListener('click', ()=>{ const out = resultArea.textContent || ''; if(!out) return alert('Nothing to download'); const blob = new Blob([out], {type:'text/plain;charset=utf-8'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (langSelect.value || 'code') + '-minified.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+  clearBtn.addEventListener('click', ()=>{ if(!inputArea.value) return; if(!confirm('Clear input?')) return; inputArea.value = ''; resultArea.textContent = 'Minified output will appear here'; updateStats(0,0); });
+
+  // history
+  function saveHistory(item){ try{ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift(item); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); }catch(e){} }
+  function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No history yet</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className = 'history-item'; el.innerHTML = `<div style="font-weight:700">${it.lang.toUpperCase()} — ${new Date(it.ts).toLocaleString()}</div><div class="small">In: ${bytes(it.inLen)}, Out: ${bytes(it.outLen)}</div><div style="margin-top:6px" class="small">${escapeHtml(it.preview)}</div>`; el.addEventListener('click', ()=>{ resultArea.textContent = it.preview; }); historyList.appendChild(el); }); }
+
+  function bytes(n){ return n + ' B'; }
+  function escapeHtml(s){ return s.replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+  saveBtn.addEventListener('click', ()=>{ const preview = resultArea.textContent || ''; if(!preview) return alert('Nothing to save'); saveHistory({ts:Date.now(), lang: langSelect.value, inLen: new Blob([inputArea.value]).size, outLen: new Blob([preview]).size, preview: preview.slice(0,500)}); alert('Saved to local history'); });
+
+  // persistence for input
+  const IN_KEY = 'ti_minifier_input_v1';
+  inputArea.addEventListener('input', ()=> localStorage.setItem(IN_KEY, inputArea.value));
+  (function init(){ const saved = localStorage.getItem(IN_KEY); if(saved) inputArea.value = saved; renderHistory(); resultArea.textContent = 'Minified output will appear here'; updateStats(0,0); })();
+
+  </script>
+</body>
+</html>
