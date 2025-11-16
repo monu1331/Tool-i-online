@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR Code Generator — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --orange:#FB8C00; --orange-dark:#e67a00; --muted:#666; --bg:#fff; --radius:12px; --shadow:0 10px 30px rgba(0,0,0,0.06); --container:1000px }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#fff,#fcfcfc);color:#222;padding:20px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:var(--shadow)}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block}
+    input[type=text], input[type=url], select, input[type=number]{width:100%;padding:10px;border-radius:10px;border:1px solid #eee}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--orange);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee}
+
+    .preview{border-radius:12px;min-height:300px;display:flex;align-items:center;justify-content:center;border:1px solid #f0f0f0;padding:12px}
+    .controls{display:flex;flex-direction:column;gap:12px}
+    .row{display:flex;gap:8px;align-items:center}
+    .small{font-size:13px;color:var(--muted)}
+
+    .option-row{display:flex;gap:8px;flex-wrap:wrap}
+    .color-input{padding:6px;border-radius:8px;border:1px solid #eee}
+
+    .actions{display:flex;gap:8px;margin-top:12px}
+
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>QR Code Generator</h1>
+        <div class="lead">Generate high-quality QR codes (PNG) with custom colors, size and error correction. Theme: orange.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div class="controls">
+            <div>
+              <label>Text / URL</label>
+              <input id="dataInput" type="text" placeholder="Enter URL or text (e.g. https://example.com)" aria-label="QR data">
+            </div>
+
+            <div class="option-row">
+              <div style="flex:1">
+                <label>Size (px)</label>
+                <input id="sizeInput" type="number" min="128" max="2000" value="512">
+              </div>
+              <div style="width:160px">
+                <label>Error correction</label>
+                <select id="ecLevel">
+                  <option value="L">L — Low (7%)</option>
+                  <option value="M">M — Medium (15%)</option>
+                  <option value="Q">Q — Quartile (25%)</option>
+                  <option value="H" selected>H — High (30%)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="option-row">
+              <div style="flex:1">
+                <label>Foreground color</label>
+                <input id="fgColor" class="color-input" type="color" value="#000000">
+              </div>
+              <div style="width:160px">
+                <label>Background color</label>
+                <input id="bgColor" class="color-input" type="color" value="#FFFFFF">
+              </div>
+            </div>
+
+            <div>
+              <label>Logo (optional)</label>
+              <input id="logoInput" type="file" accept="image/*">
+              <div class="small">Upload a small center logo (PNG recommended). Logo will be resized.</div>
+            </div>
+
+            <div class="actions">
+              <button id="generateBtn" class="btn primary">Generate</button>
+              <button id="downloadBtn" class="btn ghost" disabled>Download PNG</button>
+              <button id="copyBtn" class="btn ghost" disabled>Copy Image</button>
+            </div>
+
+            <div class="small">Tip: Use HTTPS URLs for best compatibility. Larger sizes produce higher-resolution PNGs.</div>
+          </div>
+        </section>
+
+        <aside>
+          <div>
+            <div class="small">Preview</div>
+            <div id="preview" class="preview card">
+              <canvas id="qrCanvas" width="512" height="512" aria-label="QR preview"></canvas>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearLogo" class="btn ghost">Clear Logo</button>
+              <button id="resetBtn" class="btn ghost">Reset</button>
+            </div>
+            <div style="margin-top:12px" class="card">
+              <div class="small">Export Options</div>
+              <div style="margin-top:8px" class="small">Format: PNG (download produces transparent background if chosen)</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- QR code library (lightweight) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const dataInput = document.getElementById('dataInput');
+    const sizeInput = document.getElementById('sizeInput');
+    const ecLevel = document.getElementById('ecLevel');
+    const fgColor = document.getElementById('fgColor');
+    const bgColor = document.getElementById('bgColor');
+    const logoInput = document.getElementById('logoInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const qrCanvas = document.getElementById('qrCanvas');
+    const ctx = qrCanvas.getContext('2d');
+    const preview = document.getElementById('preview');
+    const clearLogo = document.getElementById('clearLogo');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let logoImg = null;
+
+    // draw QR into canvas using QRCode library -> but qrcodejs produces a table of divs or an <img>. We'll generate a temporary canvas via DOMImage method.
+    function generateQRCodeToCanvas(text, size, level, fg, bg, logo){
+      return new Promise((resolve, reject)=>{
+        if(!text) { reject(new Error('Please enter text or URL')); return; }
+        // Create a temporary container
+        const tmp = document.createElement('div');
+        tmp.style.position='absolute'; tmp.style.left='-9999px'; document.body.appendChild(tmp);
+        // Generate QR as an <img>
+        const q = new QRCode(tmp, { text: text, width: size, height: size, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel[level] });
+        // Wait a tick for image generation
+        setTimeout(()=>{
+          const img = tmp.querySelector('img');
+          if(!img){ document.body.removeChild(tmp); reject(new Error('QR rendering failed')); return; }
+          // draw background
+          qrCanvas.width = size; qrCanvas.height = size; ctx.clearRect(0,0,size,size);
+          ctx.fillStyle = bg; ctx.fillRect(0,0,size,size);
+          // draw QR on canvas, but need to recolor to fg/bg
+          // create temp canvas to recolor
+          const off = document.createElement('canvas'); off.width = size; off.height = size; const offCtx = off.getContext('2d');
+          offCtx.drawImage(img, 0, 0, size, size);
+          const id = offCtx.getImageData(0,0,size,size);
+          const data = id.data;
+          const fgRgb = hexToRgb(fg); const bgRgb = hexToRgb(bg);
+          for(let i=0;i<data.length;i+=4){ // if pixel is dark (black) set to fg, else bg/transparent
+            const alpha = data[i+3]; // if transparent or white
+            // detect black vs white: check luminance
+            const isDark = data[i] < 128 && data[i+1] < 128 && data[i+2] < 128;
+            if(isDark){ data[i]=fgRgb.r; data[i+1]=fgRgb.g; data[i+2]=fgRgb.b; data[i+3]=255; } else { data[i]=bgRgb.r; data[i+1]=bgRgb.g; data[i+2]=bgRgb.b; data[i+3]=255; }
+          }
+          offCtx.putImageData(id,0,0);
+          ctx.drawImage(off,0,0);
+          // draw logo if provided
+          if(logo){ const lw = Math.floor(size * 0.18); const lh = lw; const lx = Math.floor((size - lw)/2); const ly = Math.floor((size - lh)/2); try{ ctx.drawImage(logo, lx, ly, lw, lh); // draw white background circle behind logo for clarity
+            // Optional: draw rounded border
+          }catch(e){ console.warn('Logo draw failed', e); }
+          }
+          document.body.removeChild(tmp);
+          resolve(qrCanvas);
+        }, 120);
+      });
+    }
+
+    function hexToRgb(hex){ hex = hex.replace('#',''); return { r: parseInt(hex.substring(0,2),16), g: parseInt(hex.substring(2,4),16), b: parseInt(hex.substring(4,6),16) }; }
+
+    async function doGenerate(){
+      try{
+        generateBtn.disabled = true; downloadBtn.disabled = true; copyBtn.disabled = true;
+        const text = dataInput.value.trim(); const size = Math.max(128, Math.min(2000, Number(sizeInput.value)||512)); const level = ecLevel.value; const fg = fgColor.value; const bg = bgColor.value;
+        await generateQRCodeToCanvas(text, size, level, fg, bg, logoImg);
+        downloadBtn.disabled = false; copyBtn.disabled = false;
+      }catch(e){ alert(e.message); }finally{ generateBtn.disabled = false; }
+    }
+
+    generateBtn.addEventListener('click', doGenerate);
+
+    // logo handling
+    logoInput.addEventListener('change', e=>{
+      const f = e.target.files && e.target.files[0]; if(!f) return; const url = URL.createObjectURL(f); const i = new Image(); i.onload = ()=>{ logoImg = i; URL.revokeObjectURL(url); }; i.src = url; });
+    clearLogo.addEventListener('click', ()=>{ logoImg = null; logoInput.value = ''; });
+
+    // download
+    downloadBtn.addEventListener('click', ()=>{
+      const name = 'qrcode-'+Date.now()+'.png'; qrCanvas.toBlob(b=>{ const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000); }, 'image/png');
+    });
+
+    // copy to clipboard
+    copyBtn.addEventListener('click', async ()=>{
+      try{
+        qrCanvas.toBlob(async b=>{
+          const item = new ClipboardItem({'image/png': b}); await navigator.clipboard.write([item]); alert('Image copied to clipboard'); }, 'image/png');
+      }catch(e){ alert('Copy failed: '+e.message); }
+    });
+
+    // reset
+    resetBtn.addEventListener('click', ()=>{ dataInput.value=''; sizeInput.value=512; fgColor.value='#000000'; bgColor.value='#ffffff'; ecLevel.value='H'; logoInput.value=''; logoImg=null; ctx.clearRect(0,0,qrCanvas.width, qrCanvas.height); downloadBtn.disabled=true; copyBtn.disabled=true; });
+
+    // convenience: auto-generate on Enter
+    dataInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); doGenerate(); } });
+
+    // initial demo
+    (function init(){ dataInput.value = 'https://example.com'; doGenerate(); })();
+  </script>
+</body>
+</html>
