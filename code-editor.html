@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>SkyBlue — Lightweight Code Editor</title>
+  <title>SkyBlue — Lightweight Code Editor (Fixed)</title>
   <style>
     :root{
       --sky:#69b7ff;
@@ -19,11 +19,9 @@
     html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
     body{background:linear-gradient(180deg,var(--bg),#eef8ff);color:#0b1220}
 
-    /* Layout */
     .app{display:grid;grid-template-columns:360px 1fr 540px;gap:18px;padding:20px;height:100vh}
     .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 22px rgba(2,48,71,0.06);padding:14px;display:flex;flex-direction:column}
 
-    /* Sidebar / files */
     .sidebar{min-width:220px}
     .brand{display:flex;align-items:center;gap:10px;margin-bottom:8px}
     .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--sky),var(--sky-600));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-family:var(--mono)}
@@ -34,12 +32,10 @@
     .file-name{font-family:var(--mono);color:var(--accent-contrast)}
     .small{font-size:12px;color:var(--muted)}
 
-    /* Top tabs */
     .tabs{display:flex;gap:8px;margin-bottom:10px}
     .tab{padding:8px 12px;border-radius:10px;background:linear-gradient(180deg,#ffffff,#f7fbff);border:1px solid rgba(7,55,95,0.04);cursor:pointer;font-family:var(--mono)}
     .tab.active{background:linear-gradient(180deg,var(--sky),var(--sky-600));color:white;box-shadow:0 6px 18px rgba(63,169,255,0.12)}
 
-    /* Editor */
     .editor-wrapper{display:flex;flex-direction:column;gap:8px}
     .toolbar{display:flex;align-items:center;gap:8px}
     .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;background:transparent;font-weight:600}
@@ -49,17 +45,14 @@
     .pane{flex:1;display:flex;flex-direction:column;min-width:0}
     .code-area{display:flex;flex:1;overflow:auto;background:#0b1220;color:#e6eef8}
     .linenums{background:#071328;color:#9fb6d8;padding:14px 8px;font-family:var(--mono);min-width:56px;text-align:right}
-    textarea.code{flex:1;outline:none;border:0;padding:14px 16px;font-size:13.5px;line-height:1.5;background:transparent;color:inherit;font-family:var(--mono);resize:none}
+    textarea.code{flex:1;outline:none;border:0;padding:14px 16px;font-size:13.5px;line-height:1.5;background:transparent;color:inherit;font-family:var(--mono);resize:none;white-space:pre}
 
-    /* Preview */
     .preview-header{display:flex;align-items:center;gap:10px;padding-bottom:8px}
     .iframe-wrap{flex:1;border-radius:8px;overflow:hidden;border:1px solid rgba(7,55,95,0.04)}
     iframe.preview{width:100%;height:100%;border:0;background:white}
 
-    /* Footer small helpers */
     .meta{font-size:12px;color:var(--muted)}
 
-    /* Responsive */
     @media (max-width:1100px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr 420px;height:100vh}.sidebar{order:3}.editor{height:380px}}
   </style>
 </head>
@@ -163,9 +156,26 @@
   </div>
 
 <script>
-// --- Starter project files ---
+/* === SkyBlue Editor JS (fixed runPreview and safe script injection) === */
+
+// Starter project files
 const starter = {
-  'index.html': `<!doctype html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n    <title>SkyBlue Demo</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n  </head>\n  <body>\n    <main>\n      <h1>Hello from SkyBlue Editor</h1>\n      <button id=\"btn\">Click me</button>\n    </main>\n    <script src=\"script.js\"></script>\n  </body>\n</html>`,
+  'index.html': `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>SkyBlue Demo</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main>
+      <h1>Hello from SkyBlue Editor</h1>
+      <button id="btn">Click me</button>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>`,
   'styles.css': `body{font-family:Inter,system-ui,Arial;margin:36px;background:linear-gradient(180deg,#f7fbff,#eef8ff);color:#012a4a}h1{color:var(--sky, #3fa9ff)}button{padding:10px 14px;border-radius:8px;border:0;background:var(--sky, #3fa9ff);color:white}`,
   'script.js': `document.getElementById('btn')?.addEventListener('click', ()=> alert('Button clicked from script.js'))`
 };
@@ -180,13 +190,13 @@ const currentFileEl = document.getElementById('currentFile');
 
 function buildTabs(){
   tabsEl.innerHTML = '';
-  Object.keys(files).forEach((name, i)=>{
+  Object.keys(files).forEach((name)=>{
     const btn = document.createElement('button');
     btn.className = 'tab' + (name===current? ' active':'');
     btn.textContent = name;
-    btn.onclick = ()=>{switchFile(name)};
+    btn.onclick = ()=>{ switchFile(name); };
     tabsEl.appendChild(btn);
-  })
+  });
 }
 
 function switchFile(name){
@@ -209,36 +219,43 @@ function updateLineNumbers(){
   linenums.textContent = s;
 }
 
+/* ===== FIXED runPreview =====
+   Important: avoid embedding the literal sequence "</script>" inside this script.
+   Build the injected script tag using string concatenation to break that sequence.
+*/
 function runPreview(){
   saveCurrent();
-  // Create a blob URL for styles and script, and inject into html
   const css = files['styles.css'] || '';
   const js = files['script.js'] || '';
   let html = files['index.html'] || '';
 
-  // Inject styles and scripts by replacing link/script tags if present, otherwise append
-  // We'll create data URLs to avoid cross-origin issues
+  // Create object URLs for css & js
   const styleBlob = new Blob([css], {type:'text/css'});
   const styleURL = URL.createObjectURL(styleBlob);
   const scriptBlob = new Blob([js], {type:'text/javascript'});
   const scriptURL = URL.createObjectURL(scriptBlob);
 
-  // Replace common href/src occurrences (best-effort)
-  html = html.replace(/<link[^>]*href=["'].*styles\.css["'][^>]*>/i, `<link rel=\"stylesheet\" href=\"${styleURL}\">`);
-  html = html.replace(/<script[^>]*src=["'].*script\.js["'][^>]*>\s*<\/script>/i, `<script src=\"${scriptURL}\"></script>`);
+  // Replace existing link to styles.css (best effort)
+  html = html.replace(/<link[^>]*href=["'].*styles\.css["'][^>]*>/i, `<link rel="stylesheet" href="${styleURL}">`);
 
-  // If index.html did not link them, append at end
+  // Replace existing script src to script.js (best effort)
+  // break the literal closing tag so this outer script doesn't get terminated in HTML parsing
+  html = html.replace(/<script[^>]*src=["'].*script\.js["'][^>]*>\s*<\/script>/i, `<script src="${scriptURL}"></scr` + 'ipt>');
+
+  // If index.html didn't reference the assets, inject them into head/body
   if(!/styles\.css/i.test(Object.keys(files).join(' ')) || !/styles\.css/i.test(html)){
-    html = html.replace(/<\/head>/i, `<link rel=\"stylesheet\" href=\"${styleURL}\">\n</head>`);
+    html = html.replace(/<\/head>/i, `<link rel="stylesheet" href="${styleURL}">\n</head>`);
   }
   if(!/script\.js/i.test(html)){
-    html = html.replace(/<\/body>/i, `<script src=\"${scriptURL}\"></script>\n</body>`);
+    // again break the literal closing tag
+    html = html.replace(/<\/body>/i, `<scr` + 'ipt src="' + scriptURL + '"></scr' + 'ipt>\n</body>`);
   }
 
+  // Set iframe preview using srcdoc for isolation
   preview.srcdoc = html;
 }
 
-// Editor behaviors
+/* ===== Editor behaviors ===== */
 codeEl.addEventListener('input', ()=>{ updateLineNumbers(); if(document.getElementById('autorun').checked) runPreview(); });
 codeEl.addEventListener('scroll', ()=>{ linenums.scrollTop = codeEl.scrollTop; });
 codeEl.addEventListener('keydown', (e)=>{
@@ -247,9 +264,8 @@ codeEl.addEventListener('keydown', (e)=>{
   if((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); downloadCurrent(); }
 });
 
-// Buttons
 document.getElementById('runBtn').addEventListener('click', runPreview);
-document.getElementById('autorun').addEventListener('change', ()=>{/* no-op */});
+document.getElementById('autorun').addEventListener('change', ()=>{});
 document.getElementById('fontSize').addEventListener('input', (e)=>{ codeEl.style.fontSize = e.target.value + 'px'; updateLineNumbers(); });
 document.getElementById('wrapBtn').addEventListener('click', ()=>{ codeEl.style.whiteSpace = codeEl.style.whiteSpace === 'pre' ? 'pre-wrap' : 'pre'; });
 
@@ -265,8 +281,6 @@ function downloadCurrent(){
 
 function downloadAllZip(){
   saveCurrent();
-  // Create a simple zip using JSZip if available, otherwise create a folder-like download by zipping manually is complex.
-  // Fallback: create a single html that contains embedded css and js assembled.
   const assembled = assembleSingleHTML();
   const blob = new Blob([assembled], {type:'text/html'});
   const a = document.createElement('a');
@@ -279,10 +293,8 @@ function assembleSingleHTML(){
   const css = files['styles.css'] || '';
   const js = files['script.js'] || '';
   let html = files['index.html'] || '';
-  // strip existing external links to styles.css and script.js
   html = html.replace(/<link[^>]*href=["'].*styles\.css["'][^>]*>/i, '');
   html = html.replace(/<script[^>]*src=["'].*script\.js["'][^>]*>\s*<\/script>/i, '');
-  // inject
   html = html.replace(/<\/head>/i, `<style>\n${css}\n</style>\n</head>`);
   html = html.replace(/<\/body>/i, `<script>\n${js}\n</script>\n</body>`);
   return html;
@@ -293,7 +305,6 @@ document.getElementById('copyBtn').addEventListener('click', ()=>{ navigator.cli
 document.getElementById('resetBtn').addEventListener('click', ()=>{ if(confirm('Reset project to starter files?')){ files = Object.assign({}, starter); switchFile('index.html'); runPreview(); }});
 document.getElementById('downloadAll').addEventListener('click', downloadAllZip);
 
-// init files list clickable items
 document.querySelectorAll('.file-item').forEach(el=>{
   el.addEventListener('click', ()=>{ switchFile(el.dataset.file); });
 });
@@ -304,7 +315,7 @@ switchFile(current);
 runPreview();
 updateLineNumbers();
 
-// Accessibility: simple autosave to localStorage
+// Autosave to localStorage
 window.addEventListener('beforeunload', ()=>{ try{ localStorage.setItem('skyblue_files', JSON.stringify(files)); localStorage.setItem('skyblue_current', current);}catch(e){} });
 (function loadFromStorage(){ try{ const saved = JSON.parse(localStorage.getItem('skyblue_files')||'null'); const c = localStorage.getItem('skyblue_current'); if(saved){ files = Object.assign({}, starter, saved); if(c && files[c]) current = c; } }catch(e){} })();
 
