@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Color Picker from Image — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --pink: #D81B60;
+      --pink-dark: #b0174a;
+      --bg: #ffffff;
+      --muted: #666666;
+      --radius: 12px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.06);
+      --container: 1100px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;background:linear-gradient(180deg,#fff,#fff);color:#222;padding:22px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;box-shadow:var(--shadow)}
+    h1{font-size:20px;margin:0}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .drop{border:2px dashed rgba(216,27,96,0.12);border-radius:10px;padding:14px;text-align:center;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+    .drop.drag{background:rgba(216,27,96,0.03);border-color:var(--pink)}
+    .drop i{font-size:34px;color:var(--pink)}
+    .file-input{display:none}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--pink);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee}
+
+    .canvas-wrap{background:#fafafa;border-radius:8px;border:1px solid #eee;padding:10px;display:flex;align-items:center;justify-content:center;min-height:260px;position:relative}
+    canvas{max-width:100%;height:auto;border-radius:6px;display:block}
+    .magnifier{position:absolute;width:140px;height:140px;border-radius:50%;box-shadow:0 8px 22px rgba(0,0,0,0.12);overflow:hidden;border:4px solid rgba(255,255,255,0.9);display:none;pointer-events:none}
+    .magnifier canvas{width:100%;height:100%;display:block}
+
+    .palette{display:flex;flex-direction:column;gap:12px}
+    .swatches{display:flex;gap:8px;flex-wrap:wrap}
+    .swatch{width:72px;height:72px;border-radius:8px;box-shadow:0 6px 12px rgba(0,0,0,0.06);display:flex;align-items:flex-end;justify-content:center;padding:8px;color:#fff;font-weight:700;cursor:pointer}
+    .swatch small{display:block;font-size:11px;margin-top:4px}
+
+    .info{background:#fff;border-radius:8px;border:1px solid #f0f0f0;padding:12px}
+    .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .actions{display:flex;gap:10px;margin-top:12px}
+
+    .muted{color:var(--muted);font-size:13px}
+
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Color Picker from Image</h1>
+        <div class="lead">Upload an image, click anywhere to pick colors, or auto-extract the dominant palette. Theme: pink.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div id="drop" class="drop" tabindex="0" aria-label="Drop image here or click to choose">
+            <i class="fa-solid fa-eye-dropper"></i>
+            <div style="font-weight:700">Drop an image here</div>
+            <div class="muted">or <button id="choose" class="btn primary" type="button">Choose file</button></div>
+            <div class="muted">Supported: JPG, PNG, WebP — max 12 MB</div>
+            <input id="file" class="file-input" type="file" accept="image/*">
+          </div>
+
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="canvas" width="800" height="450" aria-label="Image canvas"></canvas>
+            <div class="magnifier" id="magnifier"><canvas id="magnifierCanvas"></canvas></div>
+          </div>
+
+          <div class="controls">
+            <button id="clearBtn" class="btn ghost">Clear Picks</button>
+            <button id="extractBtn" class="btn primary">Auto Extract Palette</button>
+            <button id="downloadPalette" class="btn ghost">Download Palette</button>
+          </div>
+
+          <div class="muted" id="status">Ready</div>
+        </section>
+
+        <aside>
+          <div class="palette card">
+            <div class="info">
+              <div class="row"><strong>Picked Color</strong><div id="pickedPreview" style="width:46px;height:28px;border-radius:6px;border:1px solid #eee"></div></div>
+              <div class="row"><div class="muted">HEX</div><div id="hex">—</div></div>
+              <div class="row"><div class="muted">RGB</div><div id="rgb">—</div></div>
+              <div class="row"><div class="muted">HSL</div><div id="hsl">—</div></div>
+              <div class="row"><div class="muted">Contrast vs White</div><div id="contrastWhite">—</div></div>
+              <div class="row"><div class="muted">Contrast vs Black</div><div id="contrastBlack">—</div></div>
+            </div>
+
+            <div>
+              <div style="margin-top:8px" class="muted">Detected Palette</div>
+              <div id="swatches" class="swatches" aria-live="polite"></div>
+            </div>
+
+            <div style="margin-top:8px">
+              <div class="muted">Actions</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="copyHex" class="btn ghost">Copy HEX</button>
+                <button id="copyRgb" class="btn ghost">Copy RGB</button>
+                <button id="copyCss" class="btn ghost">Copy CSS</button>
+              </div>
+            </div>
+
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="muted" style="text-align:center;margin-top:12px">All color picking runs locally in your browser — no uploads.</footer>
+  </div>
+
+  <script>
+    const drop = document.getElementById('drop');
+    const choose = document.getElementById('choose');
+    const fileInput = document.getElementById('file');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const magnifier = document.getElementById('magnifier');
+    const magnifierCanvas = document.getElementById('magnifierCanvas');
+    const mctx = magnifierCanvas.getContext('2d');
+
+    const pickHex = document.getElementById('hex');
+    const pickRgb = document.getElementById('rgb');
+    const pickHsl = document.getElementById('hsl');
+    const pickedPreview = document.getElementById('pickedPreview');
+    const swatchesEl = document.getElementById('swatches');
+    const status = document.getElementById('status');
+
+    const clearBtn = document.getElementById('clearBtn');
+    const extractBtn = document.getElementById('extractBtn');
+    const downloadPalette = document.getElementById('downloadPalette');
+    const copyHex = document.getElementById('copyHex');
+    const copyRgb = document.getElementById('copyRgb');
+    const copyCss = document.getElementById('copyCss');
+
+    let img = null; let imgURL = null; let picks = [];
+
+    function showStatus(t){ status.textContent = t; }
+
+    function handleFile(f){
+      if(!f) return; if(!f.type.startsWith('image/')){ alert('Please choose an image'); return; }
+      if(f.size > 12*1024*1024){ if(!confirm('Large file (>'+Math.round(f.size/1024/1024)+'MB). Continue?')) return }
+      if(imgURL) URL.revokeObjectURL(imgURL);
+      imgURL = URL.createObjectURL(f);
+      const i = new Image();
+      i.onload = ()=>{ img = i; fitCanvas(); drawImage(); picks = []; renderSwatches(); showStatus('Image loaded'); };
+      i.onerror = ()=>{ alert('Unable to load image'); }
+      i.src = imgURL;
+    }
+
+    function fitCanvas(){
+      const wrap = document.getElementById('canvasWrap');
+      const maxW = wrap.clientWidth - 20; const maxH = 520; const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
+      canvas.width = Math.round(img.naturalWidth * ratio); canvas.height = Math.round(img.naturalHeight * ratio);
+    }
+
+    function drawImage(){ if(!img) return; ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); }
+
+    // magnifier helpers
+    function showMagnifier(x,y){ const s = 6; const size = 140; magnifier.style.display='block'; const rect = canvas.getBoundingClientRect(); magnifier.style.left = Math.min(rect.right - size - 8, Math.max(rect.left + 8, rect.left + x - size/2)) + 'px'; magnifier.style.top = (rect.top + y + 12) + 'px'; magnifierCanvas.width = size; magnifierCanvas.height = size; mctx.clearRect(0,0,size,size);
+      mctx.imageSmoothingEnabled = false; const sx = Math.max(0, Math.round(x - size/(2*s))); const sy = Math.max(0, Math.round(y - size/(2*s))); const sw = Math.round(size/s); const sh = Math.round(size/s); try{ mctx.drawImage(canvas, sx, sy, sw, sh, 0,0, size, size);}catch(e){} }
+    function hideMagnifier(){ magnifier.style.display='none'; }
+
+    // sample pixel
+    function samplePixel(x,y){ const data = ctx.getImageData(Math.floor(x), Math.floor(y), 1,1).data; return {r:data[0], g:data[1], b:data[2], a:data[3]}; }
+
+    function rgbToHex(r,g,b){ return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase(); }
+    function rgbToHsl(r,g,b){ r/=255;g/=255;b/=255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h=0,s=0,l=(max+min)/2; if(max!==min){ const d=max-min; s = l>0.5? d/(2-max-min): d/(max+min); switch(max){ case r: h=(g-b)/d + (g<b?6:0); break; case g: h=(b-r)/d +2; break; case b: h=(r-g)/d +4; break; } h/=6; } return {h:Math.round(h*360), s:Math.round(s*100), l:Math.round(l*100)} }
+
+    function addPick(x,y){ const px = Math.floor(x), py = Math.floor(y); try{ const p = samplePixel(px,py); const hex = rgbToHex(p.r,p.g,p.b); const rgb = `rgb(${p.r}, ${p.g}, ${p.b})`; const hsl = rgbToHsl(p.r,p.g,p.b); picks.unshift({hex, rgb, hsl}); if(picks.length>12) picks.pop(); renderPicked(picks[0]); renderSwatches(); showStatus('Picked '+hex); }catch(e){ console.error(e) } }
+
+    function renderPicked(p){ if(!p){ pickHex.textContent='—'; pickRgb.textContent='—'; pickHsl.textContent='—'; pickedPreview.style.background='transparent'; return; } pickHex.textContent = p.hex; pickRgb.textContent = p.rgb; pickHsl.textContent = `${p.hsl.h}°, ${p.hsl.s}%, ${p.hsl.l}%`; pickedPreview.style.background = p.hex; const contrastWhite = contrastRatio([255,255,255],[hexToRgb(p.hex).r,hexToRgb(p.hex).g,hexToRgb(p.hex).b]); const contrastBlack = contrastRatio([0,0,0],[hexToRgb(p.hex).r,hexToRgb(p.hex).g,hexToRgb(p.hex).b]); document.getElementById('contrastWhite').textContent = contrastWhite.toFixed(2); document.getElementById('contrastBlack').textContent = contrastBlack.toFixed(2); }
+
+    function renderSwatches(){ swatchesEl.innerHTML=''; picks.forEach((p,idx)=>{ const d = document.createElement('div'); d.className='swatch'; d.style.background = p.hex; d.title = p.hex; d.innerHTML = `<div style="text-shadow:0 1px 0 rgba(0,0,0,0.4)">${p.hex}</div>`; d.addEventListener('click', ()=>{ navigator.clipboard.writeText(p.hex); showStatus('Copied '+p.hex); }); swatchesEl.appendChild(d); }); if(picks.length===0){ swatchesEl.innerHTML='<div class="muted">No picks yet — click on the image to pick colors or use Auto Extract.</div>' } }
+
+    function hexToRgb(hex){ hex = hex.replace('#',''); return { r: parseInt(hex.substring(0,2),16), g: parseInt(hex.substring(2,4),16), b: parseInt(hex.substring(4,6),16) } }
+
+    // contrast ratio (WCAG) helper
+    function luminance(r,g,b){ const a = [r,g,b].map(v=>{v/=255; return v<=0.03928? v/12.92 : Math.pow((v+0.055)/1.055,2.4)}); return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
+    function contrastRatio(rgb1, rgb2){ const L1 = luminance(rgb1[0],rgb1[1],rgb1[2]); const L2 = luminance(rgb2[0],rgb2[1],rgb2[2]); const lighter = Math.max(L1,L2); const darker = Math.min(L1,L2); return (lighter+0.05)/(darker+0.05); }
+
+    // simple palette extractor: color quantization via bucketting
+    function extractPalette(count=6){ if(!img) return []; const w = canvas.width, h = canvas.height; const data = ctx.getImageData(0,0,w,h).data; const map = new Map(); for(let i=0;i<data.length;i+=4){ const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3]; if(a<128) continue; // skip transparent
+      // bucket by reducing precision
+      const key = ((Math.round(r/16)<<16) + (Math.round(g/16)<<8) + Math.round(b/16)).toString(16);
+      map.set(key, (map.get(key)||0)+1);
+    }
+    const arr = Array.from(map.entries()).map(([k,v])=>({k,v})); arr.sort((a,b)=>b.v-a.v);
+    const palette = arr.slice(0, count).map(item=>{ const hex = '#' + item.k.padStart(6,'0'); const rgb = hexToRgb(hex); return {hex: hex.toUpperCase(), rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`} }); return palette; }
+
+    extractBtn.addEventListener('click', ()=>{ if(!img) return alert('Load an image'); showStatus('Extracting...'); setTimeout(()=>{ const p = extractPalette(8); picks = p.map(x=>({hex:x.hex, rgb:x.rgb, hsl:rgbToHsl(...Object.values(hexToRgb(x.hex)))})); renderSwatches(); renderPicked(picks[0]); showStatus('Palette extracted'); }, 100); });
+
+    // interactions
+    choose.addEventListener('click', ()=> fileInput.click()); fileInput.addEventListener('change', e=> handleFile(e.target.files[0]));
+    ;['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('drag'); }));
+    ;['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', e=>{ const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+    // click to pick
+    canvas.addEventListener('pointerdown', (e)=>{
+      if(!img) return; const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; const y = e.clientY - rect.top; addPick(x,y); showMagnifier(x,y); });
+    canvas.addEventListener('pointermove', (e)=>{ if(!img) return; const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; const y = e.clientY - rect.top; showMagnifier(x,y); });
+    canvas.addEventListener('pointerleave', ()=> hideMagnifier());
+
+    clearBtn.addEventListener('click', ()=>{ picks=[]; renderSwatches(); renderPicked(); showStatus('Cleared picks'); });
+
+    // copy actions
+    copyHex.addEventListener('click', ()=>{ if(picks[0]){ navigator.clipboard.writeText(picks[0].hex); showStatus('Copied '+picks[0].hex); } });
+    copyRgb.addEventListener('click', ()=>{ if(picks[0]){ navigator.clipboard.writeText(picks[0].rgb); showStatus('Copied '+picks[0].rgb); } });
+    copyCss.addEventListener('click', ()=>{ if(picks[0]){ navigator.clipboard.writeText(`background:${picks[0].hex};`); showStatus('Copied CSS'); } });
+
+    // download palette JSON
+    downloadPalette.addEventListener('click', ()=>{
+      if(picks.length===0) return alert('No palette to download'); const data = JSON.stringify(picks, null, 2); const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'palette.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),5000);
+    });
+
+    // helpers
+    function hexToRgb(hex){ hex = hex.replace('#',''); return { r: parseInt(hex.substring(0,2),16), g: parseInt(hex.substring(2,4),16), b: parseInt(hex.substring(4,6),16) } }
+
+    // init
+    window.addEventListener('resize', ()=>{ if(img){ fitCanvas(); drawImage(); } });
+    (function init(){ showStatus('Ready'); renderSwatches(); })();
+  </script>
+</body>
+</html>
