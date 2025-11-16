@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Remove Duplicate Lines — Tool i online</title>
+  <meta name="description" content="Remove duplicate lines from text with options: case-sensitivity, sort, trim, keep-first/last. Yellow themed, responsive and professional." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --yellow:#FFB300; --yellow-dark:#d18f00; --bg:#fff8ea; --muted:#6b6b6b; --card:#ffffff; --radius:12px; --shadow:0 14px 40px rgba(0,0,0,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo-mark{width:50px;height:50px;border-radius:10px;background:linear-gradient(180deg,var(--yellow),var(--yellow-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .panel{padding:16px}
+    label{display:block;font-size:0.95rem;color:var(--muted);margin-bottom:8px}
+    textarea{width:100%;min-height:280px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:0.95rem;resize:vertical}
+
+    .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--yellow);color:#111}
+    .btn.ghost{background:#fff}
+
+    .options{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .option-row{display:flex;gap:8px;align-items:center}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    .result{margin-top:12px}
+    .preview{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);min-height:150px;background:linear-gradient(180deg,#fff,#fffef8);white-space:pre-wrap}
+
+    .history{max-height:38vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .logo-mark{width:44px;height:44px} textarea{min-height:200px} }
+    @media (max-width:480px){ h1{font-size:1rem} }
+
+    button:focus, textarea:focus, input:focus, select:focus{outline:3px solid rgba(255,179,0,0.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Remove Duplicate Lines</h1>
+        <p class="lead">Clean lists and text by removing duplicate lines. Options: case-sensitive, trim whitespace, sort, preserve order, keep first or last occurrence.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="panel" aria-labelledby="input-title">
+          <h2 id="input-title" style="margin:0;font-size:1rem">Input</h2>
+          <label for="inputText">Paste lines or text</label>
+          <textarea id="inputText" placeholder="One item per line..." aria-label="Input text"></textarea>
+
+          <div class="options" aria-label="Options">
+            <div class="option-row"><label><input type="checkbox" id="trimLines" checked> Trim whitespace from lines</label></div>
+            <div class="option-row"><label><input type="checkbox" id="caseSensitive"> Case sensitive (A ≠ a)</label></div>
+            <div class="option-row"><label><input type="checkbox" id="preserveOrder" checked> Preserve original order (keep first occurrence)</label></div>
+            <div class="option-row"><label><input type="checkbox" id="keepLast"> Keep last occurrence instead of first</label></div>
+            <div class="option-row"><label><input type="checkbox" id="sortLines"> Sort resulting lines alphabetically</label></div>
+          </div>
+
+          <div class="controls">
+            <button id="processBtn" class="btn primary"><i class="fa-solid fa-filter"></i> Remove Duplicates</button>
+            <button id="invertBtn" class="btn ghost"><i class="fa-solid fa-exchange-alt"></i> Invert Selection (unique only)</button>
+            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+            <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <div style="flex:1"></div>
+            <button id="saveBtn" class="btn ghost"><i class="fa-solid fa-save"></i> Save</button>
+          </div>
+
+          <div class="small" style="margin-top:8px">Tip: Use "Trim whitespace" to avoid duplicates caused by trailing spaces.</div>
+        </section>
+
+        <aside class="panel" aria-labelledby="output-title">
+          <h2 id="output-title" style="margin:0;font-size:1rem">Output</h2>
+          <div class="result">
+            <div class="small">Result preview</div>
+            <div class="preview" id="preview">Nothing yet — click "Remove Duplicates"</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Summary</div>
+            <div class="small">Original lines: <strong id="origCount">0</strong></div>
+            <div class="small">Unique lines: <strong id="uniqueCount">0</strong></div>
+            <div class="small">Removed: <strong id="removedCount">0</strong></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear history</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const inputText = document.getElementById('inputText');
+    const trimLinesEl = document.getElementById('trimLines');
+    const caseSensitiveEl = document.getElementById('caseSensitive');
+    const preserveOrderEl = document.getElementById('preserveOrder');
+    const keepLastEl = document.getElementById('keepLast');
+    const sortLinesEl = document.getElementById('sortLines');
+
+    const processBtn = document.getElementById('processBtn');
+    const invertBtn = document.getElementById('invertBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const preview = document.getElementById('preview');
+    const origCountEl = document.getElementById('origCount');
+    const uniqueCountEl = document.getElementById('uniqueCount');
+    const removedCountEl = document.getElementById('removedCount');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+
+    const STORAGE = 'ti_remove_dup_history_v1';
+
+    // Helpers
+    function splitLines(text){ return text.split(/\r?\n/); }
+    function joinLines(lines){ return lines.join('\n'); }
+
+    function processText(){
+      const raw = inputText.value || '';
+      const lines = splitLines(raw);
+      origCountEl.textContent = lines.length;
+
+      const trim = trimLinesEl.checked;
+      const caseSensitive = caseSensitiveEl.checked;
+      const preserveOrder = preserveOrderEl.checked;
+      const keepLast = keepLastEl.checked;
+      const doSort = sortLinesEl.checked;
+
+      // map to normalized keys
+      const map = new Map(); // key -> {firstIndex,lastIndex,line}
+      for(let i=0;i<lines.length;i++){
+        let line = lines[i];
+        const origLine = line;
+        if(trim) line = line.trim();
+        const key = caseSensitive ? line : line.toLowerCase();
+        if(!map.has(key)) map.set(key, {firstIndex:i, lastIndex:i, line: origLine});
+        else map.get(key).lastIndex = i;
+      }
+
+      // build uniques according to options
+      let resultLines = [];
+      if(preserveOrder){
+        // iterate original lines and pick first or last
+        const seen = new Set();
+        for(let i=0;i<lines.length;i++){
+          let line = lines[i]; if(trim) line = line.trim(); const key = caseSensitive ? line : line.toLowerCase();
+          if(keepLast){
+            // only include when this index == map.get(key).lastIndex
+            if(map.get(key).lastIndex === i && !seen.has(key)) { resultLines.push(trim ? line : lines[i]); seen.add(key); }
+          } else {
+            if(!seen.has(key)) { resultLines.push(trim ? line : lines[i]); seen.add(key); }
+          }
+        }
+      } else {
+        // collect unique keys from map and pick first or last
+        map.forEach((val,key)=>{
+          const idx = keepLast ? val.lastIndex : val.firstIndex;
+          const rawLine = splitLines(raw)[idx];
+          const finalLine = trim ? rawLine.trim() : rawLine;
+          resultLines.push(finalLine);
+        });
+      }
+
+      if(doSort){ resultLines.sort((a,b)=> a.localeCompare(b)); }
+
+      // compute counts
+      const uniqueCount = resultLines.length;
+      uniqueCountEl.textContent = uniqueCount;
+      removedCountEl.textContent = Math.max(0, lines.length - uniqueCount);
+
+      const out = joinLines(resultLines);
+      preview.textContent = out || '— (no output)';
+      return out;
+    }
+
+    processBtn.addEventListener('click', ()=>{ processText(); });
+
+    // invert selection: keep only lines that were unique originally (occurred once)
+    invertBtn.addEventListener('click', ()=>{
+      const raw = inputText.value || '';
+      const lines = splitLines(raw);
+      const trim = trimLinesEl.checked;
+      const caseSensitive = caseSensitiveEl.checked;
+      const counts = new Map();
+      lines.forEach(l=>{ const key = caseSensitive ? (trim?l.trim():l) : (trim?l.trim().toLowerCase():l.toLowerCase()); counts.set(key, (counts.get(key)||0)+1); });
+      const uniques = lines.filter(l=>{ const key = caseSensitive ? (trim?l.trim():l) : (trim?l.trim().toLowerCase():l.toLowerCase()); return counts.get(key)===1; }).map(l=> trim?l.trim():l);
+      preview.textContent = uniques.join('\n') || '—';
+      origCountEl.textContent = lines.length; uniqueCountEl.textContent = uniques.length; removedCountEl.textContent = lines.length - uniques.length;
+    });
+
+    // copy/download/clear
+    copyBtn.addEventListener('click', async ()=>{
+      const text = preview.textContent || '';
+      try{ await navigator.clipboard.writeText(text); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); }
+    });
+
+    downloadBtn.addEventListener('click', ()=>{
+      const text = preview.textContent || '';
+      const blob = new Blob([text], {type:'text/plain'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'unique-lines.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    clearBtn.addEventListener('click', ()=>{ if(!inputText.value) return; if(!confirm('Clear input?')) return; inputText.value = ''; preview.textContent = 'Nothing yet — click "Remove Duplicates"'; origCountEl.textContent = 0; uniqueCountEl.textContent = 0; removedCountEl.textContent = 0; });
+
+    // history
+    function saveToHistory(out){ if(!out) return; try{ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), text: out, preview: out.split('\n').slice(0,10).join(' | ')}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); }catch(e){} }
+    saveBtn.addEventListener('click', ()=>{ const out = preview.textContent || ''; if(!out) return alert('Nothing to save'); saveToHistory(out); });
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach((it,idx)=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${escapeHtml(it.preview)}</div><div class="small">${new Date(it.ts).toLocaleString()}</div>`; el.addEventListener('click', ()=>{ inputText.value = it.text; preview.textContent = it.text; processText(); }); historyList.appendChild(el); }); }
+
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+    exportHistoryBtn.addEventListener('click', ()=>{ const raw = localStorage.getItem(STORAGE) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'remove-dup-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    // small helpers
+    function escapeHtml(s){ return s.replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+    // live preview on input change
+    inputText.addEventListener('input', ()=>{ const lines = splitLines(inputText.value || ''); origCountEl.textContent = lines.length; preview.textContent = '— (not processed)'; uniqueCountEl.textContent = 0; removedCountEl.textContent = 0; });
+
+    // keyboard accessibility: Ctrl+Enter to process
+    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ e.preventDefault(); processText(); } });
+
+    // init
+    preview.textContent = 'Nothing yet — click "Remove Duplicates"'; renderHistory();
+  </script>
+</body>
+</html>
