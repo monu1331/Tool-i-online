@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Base64 Encoder / Decoder — Tool i online</title>
+  <meta name="description" content="Encode and decode Base64 (text & files). Supports URL-safe mode, copy, download and local history. Sky-blue themed and responsive." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --sky:#00bcd4; --sky-600:#0aa3b0; --bg:#f5fcff; --card:#ffffff; --muted:#456; --radius:12px; --shadow:0 12px 30px rgba(10,120,140,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#042}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,var(--sky),var(--sky-600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--sky);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 380px;gap:14px;padding:16px}
+    .pane{display:flex;flex-direction:column;gap:8px}
+    label.small{font-size:0.9rem;color:var(--muted)}
+    textarea{width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;font-size:0.95rem;resize:vertical}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .options{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+    .preview{background:linear-gradient(180deg,#fff,#f8feff);padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);min-height:120px;white-space:pre-wrap;overflow:auto}
+
+    .meta{display:flex;gap:8px;align-items:center;justify-content:space-between}
+
+    .history{max-height:36vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    input[type=file]{border-radius:8px}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:160px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,textarea:focus,input:focus{outline:3px solid rgba(0,188,212,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Base64 Encoder / Decoder</h1>
+        <p class="lead">Encode text or files to Base64 and decode back. Supports URL-safe mode, file download, copy and history. All processing is local to your browser.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <button id="encodeBtn" class="btn primary"><i class="fa-solid fa-arrow-up"></i> Encode</button>
+        <button id="decodeBtn" class="btn ghost"><i class="fa-solid fa-arrow-down"></i> Decode</button>
+        <div class="spacer"></div>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+      </div>
+
+      <div class="layout">
+        <section class="pane">
+          <label class="small">Input (text)</label>
+          <textarea id="inputArea" placeholder="Type or paste text here..."></textarea>
+
+          <div class="options">
+            <label class="option small"><input type="checkbox" id="urlSafe"> URL-safe Base64</label>
+            <label class="option small"><input type="checkbox" id="autoDetect"> Auto-detect decode if input looks like Base64</label>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <label class="small">Or choose a file to encode</label>
+            <input type="file" id="fileInput">
+          </div>
+
+          <div class="controls" style="margin-top:8px">
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="saveBtn" class="btn ghost">Save to history</button>
+            <div style="flex:1"></div>
+            <label class="small">Auto-copy <input type="checkbox" id="autoCopy"></label>
+          </div>
+        </section>
+
+        <aside class="pane">
+          <div class="meta">
+            <label class="small">Output</label>
+            <div class="small" id="info">0 bytes</div>
+          </div>
+
+          <div id="outputArea" class="preview">Encoded or decoded output will appear here.</div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear history</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const inputArea = document.getElementById('inputArea');
+    const encodeBtn = document.getElementById('encodeBtn');
+    const decodeBtn = document.getElementById('decodeBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const outputArea = document.getElementById('outputArea');
+    const info = document.getElementById('info');
+    const fileInput = document.getElementById('fileInput');
+    const urlSafeEl = document.getElementById('urlSafe');
+    const autoDetectEl = document.getElementById('autoDetect');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const historyList = document.getElementById('historyList');
+    const clearHistory = document.getElementById('clearHistory');
+    const exportHistory = document.getElementById('exportHistory');
+    const autoCopy = document.getElementById('autoCopy');
+
+    const STORAGE = 'ti_base64_history_v1';
+
+    function updateInfo(text){ info.textContent = text ? new Blob([text]).size + ' bytes' : '0 bytes'; }
+
+    function toBase64(text, urlSafe=false){ try{ const b64 = btoa(unescape(encodeURIComponent(text))); return urlSafe ? b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'') : b64; }catch(e){ return null; } }
+    function fromBase64(b64, urlSafe=false){ try{ if(urlSafe){ b64 = b64.replace(/-/g,'+').replace(/_/g,'/'); // pad
+          while(b64.length % 4) b64 += '='; }
+        const str = decodeURIComponent(escape(atob(b64))); return str; }catch(e){ return null; } }
+
+    function isLikelyBase64(s){ // quick heuristic: length multiple of 4 (or urlsafe), only base64 chars
+      if(!s || typeof s !== 'string') return false; const t = s.trim(); const urlSafe = /^[A-Za-z0-9\-_]+$/.test(t); const normal = /^[A-Za-z0-9+/=\r\n]+$/.test(t); return urlSafe || normal; }
+
+    encodeBtn.addEventListener('click', ()=>{
+      const file = fileInput.files[0];
+      if(file){ // encode file as base64
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          const arr = new Uint8Array(reader.result);
+          // convert to binary string
+          let binary = '';
+          const chunk = 0x8000;
+          for(let i=0;i<arr.length;i+=chunk){ const slice = arr.subarray(i, i+chunk); binary += String.fromCharCode.apply(null, slice); }
+          let b64 = btoa(binary);
+          if(urlSafeEl.checked) b64 = b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+          outputArea.textContent = b64;
+          updateInfo(b64);
+          if(autoCopy.checked) navigator.clipboard.writeText(b64).catch(()=>{});
+          saveHistoryEntry('file', file.name, b64.length, b64.slice(0,200));
+        };
+        reader.readAsArrayBuffer(file);
+        return;
+      }
+
+      const text = inputArea.value || '';
+      if(!text){ alert('Enter text or choose a file to encode'); return; }
+      const b64 = toBase64(text, urlSafeEl.checked);
+      if(b64 === null){ alert('Encoding failed (invalid text)'); return; }
+      outputArea.textContent = b64; updateInfo(b64); if(autoCopy.checked) navigator.clipboard.writeText(b64).catch(()=>{}); saveHistoryEntry('text', null, b64.length, b64.slice(0,200));
+    });
+
+    decodeBtn.addEventListener('click', ()=>{
+      const input = inputArea.value || outputArea.textContent || '';
+      if(!input){ alert('Enter Base64 text to decode'); return; }
+      // auto detect if looks like base64
+      let urlSafe = urlSafeEl.checked;
+      if(autoDetectEl.checked){ urlSafe = isLikelyBase64(input) && /[-_]/.test(input); }
+      const decoded = fromBase64(input.trim(), urlSafe);
+      if(decoded === null){ alert('Decoding failed — input may not be valid Base64 or wrong mode'); return; }
+      outputArea.textContent = decoded; updateInfo(decoded); if(autoCopy.checked) navigator.clipboard.writeText(decoded).catch(()=>{}); saveHistoryEntry('decode', null, decoded.length, decoded.slice(0,200));
+    });
+
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(outputArea.textContent || ''); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); } });
+
+    downloadBtn.addEventListener('click', ()=>{
+      const out = outputArea.textContent || '';
+      if(!out) return alert('Nothing to download');
+      // if last operation encoded a file, we can't automatically restore original filename or type reliably — provide text download
+      const blob = new Blob([out], {type:'text/plain'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'output.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    fileInput.addEventListener('change', ()=>{ if(fileInput.files.length) inputArea.value = ''; });
+
+    clearBtn.addEventListener('click', ()=>{ if(!inputArea.value && !outputArea.textContent) return; if(!confirm('Clear input and output?')) return; inputArea.value=''; outputArea.textContent=''; fileInput.value=''; updateInfo(''); });
+
+    // history
+    function saveHistoryEntry(type, name, size, preview){ try{ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), type, name, size, preview}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); }catch(e){} }
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${it.type.toUpperCase()} ${it.name? '· '+escapeHtml(it.name): ''}</div><div class="small">${new Date(it.ts).toLocaleString()} · ${it.size} bytes</div><div style="margin-top:6px" class="small">${escapeHtml(it.preview)}</div>`; el.addEventListener('click', ()=>{ outputArea.textContent = it.preview; updateInfo(it.preview); }); historyList.appendChild(el); }); }
+
+    clearHistory.addEventListener('click', ()=>{ if(confirm('Clear history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+    exportHistory.addEventListener('click', ()=>{ const raw = localStorage.getItem(STORAGE) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'base64-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    saveBtn.addEventListener('click', ()=>{ const out = outputArea.textContent || ''; if(!out) return alert('Nothing to save'); saveHistoryEntry('manual', null, new Blob([out]).size, out.slice(0,200)); alert('Saved to history'); });
+
+    function escapeHtml(s){ return (s+'').replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+    // init
+    (function init(){ renderHistory(); updateInfo(''); outputArea.textContent = 'Encoded or decoded output will appear here.'; })();
+
+  </script>
+</body>
+</html>
