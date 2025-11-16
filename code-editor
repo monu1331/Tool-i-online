@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Code Editor — Tool i online</title>
+  <meta name="description" content="Lightweight in-browser code editor: HTML / CSS / JS panes + live preview. Sky-blue themed, responsive, mobile friendly." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --sky:#00bcd4; --sky-dark:#0aa3b0; --bg:#f6fdff; --card:#ffffff; --muted:#556; --radius:12px; --shadow:0 10px 30px rgba(10,120,140,0.08); --maxw:1200px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#072;}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:14px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:2px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--sky);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .editor-layout{display:grid;grid-template-columns:1fr 420px;gap:12px;padding:12px}
+    .panes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .pane{background:#0ff;min-height:220px;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+    .pane .head{padding:8px 10px;background:linear-gradient(90deg,rgba(0,0,0,0.02),rgba(0,0,0,0.01));border-bottom:1px solid rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px}
+    .pane .head .title{font-weight:700;color:var(--muted)}
+    .pane .body{flex:1;min-height:160px}
+
+    .preview-wrap{display:flex;flex-direction:column;gap:8px}
+    .preview-head{display:flex;align-items:center;gap:8px}
+    .iframe-wrap{flex:1;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.06)}
+    iframe#preview{width:100%;height:420px;border:0;display:block}
+
+    .meta{display:flex;gap:8px;align-items:center}
+
+    @media (max-width:1100px){ .editor-layout{grid-template-columns:1fr 360px} .panes{grid-template-columns:1fr} iframe#preview{height:300px} }
+    @media (max-width:700px){ .editor-layout{grid-template-columns:1fr} iframe#preview{height:280px} }
+
+    /* small editor placeholders (ace will replace body) */
+    .editor-placeholder{width:100%;height:100%;}
+
+    /* focus */
+    button:focus, input:focus, select:focus{outline:3px solid rgba(0,188,212,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Code Editor</h1>
+        <p class="lead">Live HTML/CSS/JS editing with sandboxed preview. Sky-blue themed, responsive and professional.</p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="toolbar">
+        <button id="runBtn" class="btn primary"><i class="fa-solid fa-play"></i> Run</button>
+        <button id="formatBtn" class="btn ghost"><i class="fa-solid fa-brush"></i> Format</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download ZIP</button>
+        <div class="spacer"></div>
+        <label class="small">Auto-run <input type="checkbox" id="autorun" checked></label>
+        <button id="resetBtn" class="btn ghost">Reset</button>
+      </div>
+
+      <div class="editor-layout">
+        <div>
+          <div class="panes">
+            <div class="pane" id="htmlPane">
+              <div class="head"><div class="title">HTML</div></div>
+              <div class="body"><div id="htmlEditor" class="editor-placeholder"></div></div>
+            </div>
+
+            <div class="pane" id="cssPane">
+              <div class="head"><div class="title">CSS</div></div>
+              <div class="body"><div id="cssEditor" class="editor-placeholder"></div></div>
+            </div>
+
+            <div class="pane" id="jsPane">
+              <div class="head"><div class="title">JavaScript</div></div>
+              <div class="body"><div id="jsEditor" class="editor-placeholder"></div></div>
+            </div>
+          </div>
+
+          <div style="padding:10px;display:flex;gap:8px;align-items:center">
+            <input id="titleInput" placeholder="Project title (optional)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy HTML</button>
+          </div>
+        </div>
+
+        <div class="preview-wrap">
+          <div class="preview-head">
+            <div class="meta"><strong>Preview</strong></div>
+            <div style="flex:1"></div>
+            <button id="openNewBtn" class="btn ghost">Open in new tab</button>
+          </div>
+          <div class="iframe-wrap"><iframe id="preview" sandbox="allow-scripts allow-forms allow-same-origin"></iframe></div>
+          <div style="padding:10px;display:flex;gap:8px;align-items:center">
+            <div class="small">Live errors:</div><div id="errorMsg" class="small" style="color:#c62828"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="" crossorigin="anonymous"></script>
+  <script>
+    // Basic template
+    const template = {
+      html: `<!-- HTML: Add your markup here -->\n<div class=\"container\">\n  <h1>Hello from Tool i online — Code Editor</h1>\n  <p>Edit HTML, CSS, and JS — then click Run (or auto-run).</p>\n</div>`,
+      css: `/* CSS: style your page */\nbody{font-family:Inter, system-ui, -apple-system, sans-serif;padding:30px;background:linear-gradient(180deg,#f0fdff,#e6fbff);} .container{max-width:900px;margin:0 auto} h1{color:var(--sky-dark);} p{color:#334;}`.replace(/var\(--sky-dark\)/g, '#0aa3b0'),
+      js: `// JavaScript: interact with DOM\nconsole.log('Code Editor ready');`
+    };
+
+    // init ace editors
+    const htmlEditor = ace.edit('htmlEditor'); htmlEditor.session.setMode('ace/mode/html'); htmlEditor.setTheme('ace/theme/chrome'); htmlEditor.session.setValue(template.html); htmlEditor.setOptions({fontSize:14,wrap:true});
+    const cssEditor = ace.edit('cssEditor'); cssEditor.session.setMode('ace/mode/css'); cssEditor.setTheme('ace/theme/chrome'); cssEditor.session.setValue(template.css); cssEditor.setOptions({fontSize:14,wrap:true});
+    const jsEditor = ace.edit('jsEditor'); jsEditor.session.setMode('ace/mode/javascript'); jsEditor.setTheme('ace/theme/chrome'); jsEditor.session.setValue(template.js); jsEditor.setOptions({fontSize:14,wrap:true});
+
+    const previewFrame = document.getElementById('preview');
+    const runBtn = document.getElementById('runBtn');
+    const autorun = document.getElementById('autorun');
+    const copyBtn = document.getElementById('copyBtn');
+    const openNewBtn = document.getElementById('openNewBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const formatBtn = document.getElementById('formatBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const titleInput = document.getElementById('titleInput');
+    const errorMsg = document.getElementById('errorMsg');
+
+    function buildPreview(){
+      const html = htmlEditor.getValue();
+      const css = cssEditor.getValue();
+      const js = jsEditor.getValue();
+      const full = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>${escapeHtml(titleInput.value||'Preview')}</title><style>${css}</style></head><body>${html}<script>try{\n${js}\n}catch(e){parent.postMessage({type:'preview-error', message: e.message}, '*');}</script></body></html>`;
+      return full;
+    }
+
+    function renderPreview(){
+      errorMsg.textContent = '';
+      const doc = buildPreview();
+      const blob = new Blob([doc], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      previewFrame.src = url;
+      // revoke previous after load to free memory — keep a small delay
+      setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    }
+
+    // listen to messages from preview (errors)
+    window.addEventListener('message', (ev)=>{
+      try{ if(ev.data && ev.data.type === 'preview-error'){ errorMsg.textContent = ev.data.message; } }catch(e){}
+    });
+
+    runBtn.addEventListener('click', ()=> renderPreview());
+    openNewBtn.addEventListener('click', ()=>{ const doc = buildPreview(); const w = window.open(); w.document.open(); w.document.write(doc); w.document.close(); });
+
+    copyBtn.addEventListener('click', ()=>{ const doc = buildPreview(); navigator.clipboard.writeText(doc).then(()=>{ copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy HTML',1000); }); });
+
+    downloadBtn.addEventListener('click', ()=>{
+      // make a zip-like single html download
+      const doc = buildPreview(); const blob = new Blob([doc], {type:'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (titleInput.value || 'project') + '.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    // format: simple pretty by inserting indentation for HTML/CSS/JS using built-in basic formatting (not a full prettier)
+    formatBtn.addEventListener('click', ()=>{
+      // naive formatting: trim lines and replace multiple blank lines
+      [htmlEditor, cssEditor, jsEditor].forEach(ed=>{
+        const v = ed.getValue().split('\n').map(l=> l.replace(/\t/g,'    ').replace(/\s+$/,'')).join('\n').replace(/\n{3,}/g,'\n\n');
+        ed.setValue(v, -1);
+      });
+    });
+
+    resetBtn.addEventListener('click', ()=>{
+      if(!confirm('Reset editors to template?')) return; htmlEditor.setValue(template.html, -1); cssEditor.setValue(template.css, -1); jsEditor.setValue(template.js, -1); renderPreview();
+    });
+
+    // autorun
+    let autorunTimer = null;
+    [htmlEditor, cssEditor, jsEditor].forEach(ed=> ed.session.on('change', ()=>{ if(autorun.checked){ clearTimeout(autorunTimer); autorunTimer = setTimeout(renderPreview, 600); } }));
+
+    // simple persistence
+    const STORAGE = 'ti_code_editor_v1';
+    function saveState(){ const state = {html: htmlEditor.getValue(), css: cssEditor.getValue(), js: jsEditor.getValue(), title: titleInput.value}; localStorage.setItem(STORAGE, JSON.stringify(state)); }
+    function loadState(){ try{ const s = JSON.parse(localStorage.getItem(STORAGE) || '{}'); if(s.html) htmlEditor.setValue(s.html, -1); if(s.css) cssEditor.setValue(s.css, -1); if(s.js) jsEditor.setValue(s.js, -1); if(s.title) titleInput.value = s.title; }catch(e){} }
+    setInterval(saveState, 3000);
+    loadState(); renderPreview();
+
+    // small helper
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+    // keyboard: Ctrl/Cmd+Enter run
+    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ e.preventDefault(); renderPreview(); } });
+
+    // post message for runtime errors: inside preview, script catches and posts to parent. For user scripts using console.error etc, not intercepted.
+  </script>
+</body>
+</html>
