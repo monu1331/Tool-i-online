@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Palette Generator — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --pink:#D81B60; --muted:#6b6b6b; --bg:#fff; --card-shadow:0 12px 30px rgba(0,0,0,0.06); --radius:12px; --container:1100px }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#fff,#fbfbfb);color:#222;padding:22px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:var(--card-shadow)}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:16px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .control{display:flex;flex-direction:column;gap:6px}
+    input[type=color], input[type=number], select, input[type=text]{padding:10px;border-radius:10px;border:1px solid #eee}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--pink);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee}
+
+    .preview{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .swatch{flex:1 1 120px;height:110px;border-radius:8px;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;color:#fff;font-weight:700;text-shadow:0 1px 0 rgba(0,0,0,0.25)}
+    .swatch small{font-weight:600;font-size:12px;opacity:0.95}
+
+    .preset-list{display:flex;gap:8px;flex-wrap:wrap}
+    .preset{padding:7px 10px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer}
+
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .muted{color:var(--muted);font-size:13px}
+    .code{font-family:monospace;background:#fafafa;padding:10px;border-radius:8px;border:1px solid #f0f0f0}
+
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Palette Generator</h1>
+        <div class="lead">Generate color palettes (analogous, complementary, triadic, monochrome) from a base color. Pink-themed and responsive.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="controls">
+              <div class="control">
+                <label class="muted">Base color</label>
+                <input id="baseColor" type="color" value="#D81B60">
+              </div>
+
+              <div class="control">
+                <label class="muted">Number of colors</label>
+                <input id="count" type="number" min="3" max="8" value="5">
+              </div>
+
+              <div class="control">
+                <label class="muted">Palette type</label>
+                <select id="type">
+                  <option value="analogous">Analogous</option>
+                  <option value="complementary">Complementary</option>
+                  <option value="triadic">Triadic</option>
+                  <option value="monochrome">Monochrome</option>
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:end;gap:8px">
+                <button id="generate" class="btn primary">Generate</button>
+                <button id="random" class="btn ghost">Random</button>
+              </div>
+            </div>
+
+            <div class="muted">Presets</div>
+            <div class="preset-list">
+              <div class="preset" data-color="#D81B60">Pink</div>
+              <div class="preset" data-color="#FF6B6B">Coral</div>
+              <div class="preset" data-color="#00ACC1">Cyan</div>
+              <div class="preset" data-color="#26A69A">Teal</div>
+              <div class="preset" data-color="#5E35B1">Purple</div>
+            </div>
+
+            <div class="muted">Preview</div>
+            <div id="preview" class="preview"></div>
+
+            <div class="actions">
+              <button id="copyCss" class="btn ghost">Copy CSS</button>
+              <button id="downloadJson" class="btn ghost">Download JSON</button>
+              <button id="exportImage" class="btn ghost">Export as PNG</button>
+            </div>
+          </div>
+        </section>
+
+        <aside>
+          <div class="card">
+            <div class="muted">Palette CSS (background array)</div>
+            <div style="height:8px"></div>
+            <div id="cssCode" class="code">—</div>
+            <div style="height:12px"></div>
+            <div class="muted">Palette JSON</div>
+            <div style="height:8px"></div>
+            <div id="jsonCode" class="code">—</div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // utils
+    function hexToHsl(hex){ hex = hex.replace('#',''); const r = parseInt(hex.substring(0,2),16)/255; const g = parseInt(hex.substring(2,4),16)/255; const b = parseInt(hex.substring(4,6),16)/255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h=0,s=0,l=(max+min)/2; if(max!==min){ const d=max-min; s = l>0.5? d/(2-max-min): d/(max+min); switch(max){case r: h=(g-b)/d + (g<b?6:0); break; case g: h=(b-r)/d +2; break; case b: h=(r-g)/d +4; break;} h/=6; } return {h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100)} }
+    function hslToHex(h,s,l){ s/=100; l/=100; const a = s * Math.min(l,1-l); function f(n){ const k = (n + h/30) % 12; const color = l - a * Math.max(Math.min(k-3,9-k,1), -1); return Math.round(255*color).toString(16).padStart(2,'0'); } return '#'+f(0)+f(8)+f(4); }
+
+    function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
+
+    function generatePalette(baseHex, count, type){ const base = hexToHsl(baseHex); const colors = []; if(type==='analogous'){ const spread = 30; const half = Math.floor(count/2); for(let i=-half;i<=half;i++){ const h = (base.h + i * spread + 360) % 360; const s = clamp(base.s,10,90); const l = clamp(base.l,10,90); colors.push(hslToHex(h,s,l)); } }
+      else if(type==='complementary'){ // base + complementary spread
+        colors.push(baseHex); const comp = (base.h + 180) % 360; const s=clamp(base.s,10,90); const l=clamp(base.l,10,90); colors.push(hslToHex(comp,s,l)); // fill with tints
+        while(colors.length < count){ const t = colors.length%2===0? base.h + colors.length*10 : comp + colors.length*10; colors.push(hslToHex((t+360)%360, base.s, clamp(base.l + (colors.length*5), 10, 90))); }
+      }
+      else if(type==='triadic'){ const h1 = base.h; const h2 = (base.h + 120) % 360; const h3 = (base.h + 240) % 360; const hs = [h1,h2,h3]; for(let i=0;i<count;i++){ const h = hs[i % 3]; colors.push(hslToHex(h, base.s, clamp(base.l + Math.floor(i/3)*6, 10, 90))); }
+      }
+      else if(type==='monochrome'){ // vary lightness
+        const step = Math.floor(60 / (count-1)); const start = clamp(base.l - 30, 5, 95); for(let i=0;i<count;i++){ const l = clamp(start + i*step, 5, 95); colors.push(hslToHex(base.h, base.s, l)); }
+      }
+      // ensure length
+      return colors.slice(0,count);
+    }
+
+    // UI wiring
+    const baseColor = document.getElementById('baseColor');
+    const countInput = document.getElementById('count');
+    const typeSelect = document.getElementById('type');
+    const generateBtn = document.getElementById('generate');
+    const randomBtn = document.getElementById('random');
+    const preview = document.getElementById('preview');
+    const cssCode = document.getElementById('cssCode');
+    const jsonCode = document.getElementById('jsonCode');
+    const copyCss = document.getElementById('copyCss');
+    const downloadJson = document.getElementById('downloadJson');
+    const exportImage = document.getElementById('exportImage');
+
+    function render(colors){ preview.innerHTML=''; colors.forEach(c=>{ const d = document.createElement('div'); d.className='swatch'; d.style.background = c; d.innerHTML = `<small>${c}</small>`; d.addEventListener('click', ()=>{ navigator.clipboard.writeText(c); alert('Copied '+c); }); preview.appendChild(d); }); cssCode.textContent = `background: linear-gradient(90deg, ${colors.join(', ')});`; jsonCode.textContent = JSON.stringify(colors, null, 2);
+    }
+
+    generateBtn.addEventListener('click', ()=>{ const colors = generatePalette(baseColor.value, Number(countInput.value), typeSelect.value); render(colors); });
+
+    randomBtn.addEventListener('click', ()=>{ const rand = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'); baseColor.value = rand; const colors = generatePalette(baseColor.value, Number(countInput.value), typeSelect.value); render(colors); });
+
+    document.querySelectorAll('.preset').forEach(p=> p.addEventListener('click', ()=>{ baseColor.value = p.dataset.color; const colors = generatePalette(baseColor.value, Number(countInput.value), typeSelect.value); render(colors); }));
+
+    copyCss.addEventListener('click', ()=>{ navigator.clipboard.writeText(cssCode.textContent); copyCss.textContent='Copied'; setTimeout(()=>copyCss.textContent='Copy CSS',1200); });
+
+    downloadJson.addEventListener('click', ()=>{ const data = jsonCode.textContent; const blob = new Blob([data], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='palette.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),5000); });
+
+    exportImage.addEventListener('click', ()=>{
+      // export preview as PNG
+      const swatches = Array.from(preview.children);
+      if(swatches.length===0) return alert('Generate a palette first');
+      const w = swatches.length * 200; const h = 200; const c = document.createElement('canvas'); c.width = w; c.height = h; const ctx = c.getContext('2d'); swatches.forEach((s,i)=>{ ctx.fillStyle = window.getComputedStyle(s).backgroundColor; ctx.fillRect(i*200,0,200,h); }); c.toBlob(b=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='palette.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),5000); }); });
+
+    // initial
+    (function init(){ const initial = generatePalette(baseColor.value, Number(countInput.value), typeSelect.value); render(initial); })();
+  </script>
+</body>
+</html>
