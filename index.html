@@ -970,41 +970,137 @@ const toolsData = {
     }
   ],
   "web": [
-    { name: "Code Editor Tool", description: "Write and test HTML, CSS, and JavaScript code", icon: "fas fa-code" },
-    { name: "HTML/CSS/JS Minifier", description: "Minify code to reduce file size", icon: "fas fa-file-code" },
-    { name: "JSON Formatter & Validator", description: "Format and validate JSON data", icon: "fas fa-brackets-curly" },
+    { name: "Code Editor Tool", 
+     description: "Write and test HTML, CSS, and JavaScript code", 
+     icon: "fas fa-code",
+     url: "code-editor"
+    },
+    { name: "HTML/CSS/JS Minifier", 
+     description: "Minify code to reduce file size",
+     icon: "fas fa-file-code",
+     url: "code-minifier"
+    },
+    { name: "JSON Formatter & Validator", 
+     description: "Format and validate JSON data", 
+     icon: "fas fa-brackets-curly",
+     url: "json-frmatter-validator.html"
+    },
     { name: "Base64 Encoder/Decoder", 
      description: "Encode and decode Base64 strings", 
      icon: "fas fa-lock-open",
      url: "base64-encoder-decoder.html"
     },
-    { name: "URL Encoder/Decoder", description: "Encode and decode URL strings", icon: "fas fa-link" },
-    { name: "Color Picker & Converter", description: "Pick colors and convert between formats", icon: "fas fa-eye-dropper" },
-    { name: "Regex Tester", description: "Test and debug regular expressions", icon: "fas fa-terminal" },
-    { name: "HTML Previewer / Live Editor", description: "Preview HTML code in real-time", icon: "fas fa-desktop" }
+    { name: "URL Encoder/Decoder",
+     description: "Encode and decode URL strings",
+     icon: "fas fa-link",
+     url: "url-encoder-decoder.html"
+    },
+    { name: "Color Picker & Converter", 
+     description: "Pick colors and convert between formats", 
+     icon: "fas fa-eye-dropper",
+     url: "colour-picker.html"
+    },
+    { name: "Regex Tester",
+     description: "Test and debug regular expressions", 
+     icon: "fas fa-terminal",
+     url: "regex-tester.html"
+    },
+    { name: "HTML Previewer / Live Editor",
+     description: "Preview HTML code in real-time", 
+     icon: "fas fa-desktop",
+     url: "html-previewer-live-editor.html"
+    }
   ],
   "color": [
-    { name: "Color Picker from Image", description: "Extract colors from uploaded images", icon: "fas fa-eye-dropper" },
-    { name: "HEX to RGB Converter", description: "Convert HEX color codes to RGB values", icon: "fas fa-exchange-alt" },
-    { name: "Gradient Generator", description: "Create beautiful CSS gradients", icon: "fas fa-palette" },
-    { name: "Contrast Checker", description: "Check color contrast for accessibility", icon: "fas fa-adjust" },
-    { name: "Palette Generator", description: "Generate color palettes from base colors", icon: "fas fa-swatchbook" },
-    { name: "Color Blindness Simulator", description: "Simulate how colors appear to colorblind users", icon: "fas fa-low-vision" },
-    { name: "Random Gradient Background Generator", description: "Generate random gradient backgrounds", icon: "fas fa-random" }
+    { name: "Color Picker from Image", 
+     description: "Extract colors from uploaded images", 
+     icon: "fas fa-eye-dropper",
+     url: "colour-picker.html"
+    },
+    { name: "HEX to RGB Converter", 
+     description: "Convert HEX color codes to RGB values", 
+     icon: "fas fa-exchange-alt",
+     url: "hex-to-rbg-converter.html"
+    },
+    { name: "Gradient Generator", 
+     description: "Create beautiful CSS gradients", 
+     icon: "fas fa-palette",
+     url: "gradient-generator.html"
+    },
+    { name: "Contrast Checker", 
+     description: "Check color contrast for accessibility", 
+     icon: "fas fa-adjust",
+     url: "contrast-checker.html"
+    },
+    { name: "Palette Generator", 
+     description: "Generate color palettes from base colors", 
+     icon: "fas fa-swatchbook",
+     url: "palette-generator.html"
+    },
+    { name: "Color Blindness Simulator", 
+     description: "Simulate how colors appear to colorblind users", 
+     icon: "fas fa-low-vision",
+     url: "color-blindness-simulator.html"
+    },
+    { name: "Random Gradient Background Generator", 
+     description: "Generate random gradient backgrounds", 
+     icon: "fas fa-random",
+     url: "gradient-generator.html"
+    }
   ],
   "seo": [
-    { name: "Keyword Density Checker", description: "Analyze keyword density in your content", icon: "fas fa-chart-pie" },
-    { name: "Meta Tag Analyzer", description: "Check and analyze meta tags on web pages", icon: "fas fa-tags" },
-    { name: "Word Counter", description: "Count words and characters for SEO optimization", icon: "fas fa-sort-amount-down" }
+    { name: "Keyword Density Checker",
+     description: "Analyze keyword density in your content", 
+     icon: "fas fa-chart-pie",
+     url: "keyword-density-checker.html"
+    },
+    { name: "Meta Tag Analyzer", 
+     description: "Check and analyze meta tags on web pages", 
+     icon: "fas fa-tags",
+     url: "meta-tag-analyzer.html"
+    },
+    { name: "Word Counter", 
+     description: "Count words and characters for SEO optimization",
+     icon: "fas fa-sort-amount-down",
+     url: "word-counter-tool.html"
+    }
   ],
   "utility": [
-    { name: "QR Code Generator", description: "Generate QR codes from text or URLs", icon: "fas fa-qrcode" },
-    { name: "Barcode Generator", description: "Create barcodes for products and items", icon: "fas fa-barcode" },
-    { name: "UUID Generator", description: "Generate unique identifiers", icon: "fas fa-fingerprint" },
-    { name: "Unit Converter", description: "Convert between different units of measurement", icon: "fas fa-balance-scale" },
-    { name: "Stopwatch & Countdown Timer", description: "Track time with stopwatch and timer", icon: "fas fa-stopwatch" },
-    { name: "Random Number/Password Generator", description: "Generate random numbers and secure passwords", icon: "fas fa-random" },
-    { name: "Local Storage Cleaner / Viewer", description: "View and clean browser local storage", icon: "fas fa-trash-alt" }
+    { name: "QR Code Generator",
+     description: "Generate QR codes from text or URLs",
+     icon: "fas fa-qrcode",
+     url: "qr-code-generator.html"
+    },
+    { name: "Barcode Generator",
+     description: "Create barcodes for products and items",
+     icon: "fas fa-barcode",
+     url: "barcode-generator.html"
+    },
+    { name: "UUID Generator",
+     description: "Generate unique identifiers", 
+     icon: "fas fa-fingerprint",
+     url: "uuid-generator"
+    },
+    { name: "Unit Converter",
+     description: "Convert between different units of measurement",
+     icon: "fas fa-balance-scale",
+     url: "unit-converter.html"
+    },
+    { name: "Stopwatch & Countdown Timer", 
+     description: "Track time with stopwatch and timer",
+     icon: "fas fa-stopwatch",
+     url: "stopwatch-countdown.html"
+    },
+    { name: "Random Number/Password Generator", 
+     description: "Generate random numbers and secure passwords", 
+     icon: "fas fa-random",
+     url: "password-generator.html"
+    },
+    { name: "Local Storage Cleaner / Viewer",
+     description: "View and clean browser local storage",
+     icon: "fas fa-trash-alt",
+     url: "storage-cleaner.html"
+    }
   ]
 };
 
