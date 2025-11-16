@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Text Reverser — Tool i online</title>
+  <meta name="description" content="Reverse text in multiple ways: full text, lines, words, characters — responsive yellow themed UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --yellow:#FFB300; --yellow-dark:#d18f00; --bg:#fff8ea; --muted:#6b6b6b; --card:#ffffff; --radius:12px; --shadow:0 14px 40px rgba(0,0,0,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo-mark{width:50px;height:50px;border-radius:10px;background:linear-gradient(180deg,var(--yellow),var(--yellow-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .panel{padding:16px}
+    label{display:block;font-size:0.95rem;color:var(--muted);margin-bottom:8px}
+    textarea{width:100%;min-height:240px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:0.95rem;resize:vertical}
+
+    .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--yellow);color:#111}
+    .btn.ghost{background:#fff}
+
+    .options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+    .option{padding:10px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px}
+    .option input[type=radio]{transform:scale(1.1)}
+
+    .preview{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);min-height:140px;background:linear-gradient(180deg,#fff,#fffef8);white-space:pre-wrap}
+
+    .history{max-height:48vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .logo-mark{width:44px;height:44px} textarea{min-height:180px} }
+    @media (max-width:480px){ h1{font-size:1rem} }
+
+    :focus{outline:3px solid rgba(255,179,0,0.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Text Reverser</h1>
+        <p class="lead">Reverse text in several modes: full text, per line, per word, per character. Mobile & desktop friendly. All processing stays in browser.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="panel" aria-labelledby="input-title">
+          <h2 id="input-title" style="margin:0;font-size:1rem">Input</h2>
+          <label for="inputText">Paste or type text</label>
+          <textarea id="inputText" placeholder="Type or paste text here..."></textarea>
+
+          <div class="options" role="radiogroup" aria-label="Reverse mode">
+            <label class="option"><input type="radio" name="mode" value="full" checked> <div><strong>Full text</strong><div class="small">Reverse entire string (characters)</div></div></label>
+            <label class="option"><input type="radio" name="mode" value="lines"> <div><strong>Per line</strong><div class="small">Reverse order of lines</div></div></label>
+            <label class="option"><input type="radio" name="mode" value="words"> <div><strong>Per word</strong><div class="small">Reverse order of words in each line</div></div></label>
+            <label class="option"><input type="radio" name="mode" value="chars"> <div><strong>Per word chars</strong><div class="small">Reverse characters inside each word</div></div></label>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+            <label class="small" style="margin-right:8px">Options</label>
+            <label><input type="checkbox" id="preserveLineEnd" checked> Preserve line breaks</label>
+            <label><input type="checkbox" id="trimLines"> Trim lines</label>
+            <label><input type="checkbox" id="ignoreEmpty"> Ignore empty lines</label>
+          </div>
+
+          <div class="controls">
+            <button id="reverseBtn" class="btn primary"><i class="fa-solid fa-retweet"></i> Reverse</button>
+            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+            <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <div style="flex:1"></div>
+            <button id="saveBtn" class="btn ghost"><i class="fa-solid fa-save"></i> Save</button>
+          </div>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="output-title">
+          <h2 id="output-title" style="margin:0;font-size:1rem">Output</h2>
+          <div class="preview" id="preview">No output yet — click Reverse</div>
+
+          <div style="margin-top:12px">
+            <div class="small">Summary</div>
+            <div class="small">Original length: <strong id="origLen">0</strong> chars</div>
+            <div class="small">Output length: <strong id="outLen">0</strong> chars</div>
+            <div class="small">Lines: <strong id="lineCount">0</strong></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear history</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const reverseBtn = document.getElementById('reverseBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const preview = document.getElementById('preview');
+    const origLenEl = document.getElementById('origLen');
+    const outLenEl = document.getElementById('outLen');
+    const lineCountEl = document.getElementById('lineCount');
+
+    const preserveLineEnd = document.getElementById('preserveLineEnd');
+    const trimLines = document.getElementById('trimLines');
+    const ignoreEmpty = document.getElementById('ignoreEmpty');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+
+    const STORAGE = 'ti_text_reverser_history_v1';
+
+    function getMode(){ const r = document.querySelector('input[name="mode"]:checked'); return r ? r.value : 'full'; }
+
+    function splitLines(text){ return text.split(/\r?\n/); }
+    function joinLines(lines, preserve){ return preserve ? lines.join('\n') : lines.join('\n'); }
+
+    function reverseString(s){ return Array.from(s).reverse().join(''); }
+
+    function process(){
+      let text = inputText.value || '';
+      origLenEl.textContent = text.length;
+      if(!text){ preview.textContent = 'No input'; outLenEl.textContent = 0; lineCountEl.textContent = 0; return; }
+
+      const mode = getMode();
+      let lines = splitLines(text);
+      lineCountEl.textContent = lines.length;
+
+      if(trimLines.checked){ lines = lines.map(l=> l.trim()); }
+      if(ignoreEmpty.checked){ lines = lines.filter(l=> l.length > 0); }
+
+      let out = '';
+      if(mode === 'full'){
+        // reverse whole text including line breaks
+        out = reverseString(text);
+      } else if(mode === 'lines'){
+        // reverse order of lines
+        const rev = lines.slice().reverse();
+        out = joinLines(rev, preserveLineEnd.checked);
+      } else if(mode === 'words'){
+        // reverse order of words in each line
+        const processed = lines.map(line => {
+          const words = line.split(/(\s+)/).filter(Boolean); // keep spaces as tokens
+          // extract word tokens and separators
+          const tokens = []; const separators = [];
+          // simpler: split by spaces but keep sequence
+          const parts = line.split(/(\s+)/);
+          const wordParts = parts.filter((_,i)=> i%2===0);
+          const sepParts = parts.filter((_,i)=> i%2===1);
+          const revWords = wordParts.reverse();
+          // rebuild keeping separators between
+          let rebuilt = '';
+          for(let i=0;i<revWords.length;i++){ rebuilt += revWords[i]; if(i < sepParts.length) rebuilt += sepParts[i]; }
+          return rebuilt;
+        });
+        out = joinLines(processed, preserveLineEnd.checked);
+      } else if(mode === 'chars'){
+        // reverse characters inside each word but keep word order
+        const processed = lines.map(line => {
+          return line.split(/(\s+)/).map(token => {
+            if(/^\s+$/.test(token)) return token; // whitespace
+            return reverseString(token);
+          }).join('');
+        });
+        out = joinLines(processed, preserveLineEnd.checked);
+      }
+
+      preview.textContent = out || '—';
+      outLenEl.textContent = out.length;
+      saveLast(out);
+      return out;
+    }
+
+    reverseBtn.addEventListener('click', ()=>{ process(); });
+
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(preview.textContent || ''); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); } });
+    downloadBtn.addEventListener('click', ()=>{ const out = preview.textContent || ''; const blob = new Blob([out], {type:'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'reversed.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+    clearBtn.addEventListener('click', ()=>{ if(!inputText.value) return; if(!confirm('Clear input?')) return; inputText.value=''; preview.textContent='No output yet'; origLenEl.textContent=0; outLenEl.textContent=0; lineCountEl.textContent=0; });
+
+    // history
+    function saveLast(out){ if(!out) return; const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), text: out, preview: out.slice(0,120).replace(/\n/g,' ')}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); }
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML=''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${escapeHtml(it.preview)}</div><div class="small">${new Date(it.ts).toLocaleString()}</div>`; el.addEventListener('click', ()=>{ preview.textContent = it.text; inputText.value = it.text; origLenEl.textContent = it.text.length; outLenEl.textContent = it.text.length; lineCountEl.textContent = it.text.split(/\r?\n/).length; }); historyList.appendChild(el); }); }
+    saveBtn.addEventListener('click', ()=>{ const out = preview.textContent || ''; if(!out) return alert('Nothing to save'); const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), text: out, preview: out.slice(0,120).replace(/\n/g,' ')}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); });
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+    exportHistoryBtn.addEventListener('click', ()=>{ const raw = localStorage.getItem(STORAGE) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'reverser-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    function escapeHtml(unsafe){ return unsafe.replace(/[&<>\"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+    // keyboard shortcuts
+    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ e.preventDefault(); process(); } });
+
+    // live preview counts
+    inputText.addEventListener('input', ()=>{ origLenEl.textContent = inputText.value.length; lineCountEl.textContent = (inputText.value ? inputText.value.split(/\r?\n/).length : 0); preview.textContent = 'No output yet'; outLenEl.textContent = 0; });
+
+    // init
+    preview.textContent = 'No output yet'; renderHistory();
+  </script>
+</body>
+</html>
