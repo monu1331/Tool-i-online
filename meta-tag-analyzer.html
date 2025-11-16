@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meta Tag Analyzer — Tool i online</title>
+  <meta name="description" content="Analyze meta tags, OpenGraph, Twitter cards and structured data. Light-green themed, responsive and professional UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --green:#8bc34a; --green-700:#7cb342; --bg:#f8fff4; --card:#ffffff; --muted:#234; --radius:12px; --shadow:0 10px 30px rgba(60,100,50,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:var(--bg);color:#123}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--green),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 420px;gap:14px;padding:16px}
+    textarea,input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:0.95rem}
+    textarea{min-height:200px;resize:vertical}
+
+    .info{display:flex;gap:8px;flex-wrap:wrap}
+    .card-small{background:#fff;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.04)}
+
+    .results{margin-top:10px}
+    .tag-row{display:flex;gap:12px;align-items:flex-start;padding:10px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+    .tag-name{width:180px;font-weight:700;color:var(--muted)}
+    .tag-val{flex:1}
+
+    .missing{color:#c62828;font-weight:700}
+    .good{color:green;font-weight:700}
+
+    .preview-snippet{background:linear-gradient(180deg,#fff,#fbfff2);padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04)}
+
+    .history{max-height:30vh;overflow:auto;margin-top:8px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:140px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,input:focus,textarea:focus{outline:3px solid rgba(139,195,74,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Meta Tag Analyzer</h1>
+        <p class="lead">Paste a page URL or HTML source and get instant analysis of title, meta description, OpenGraph, Twitter cards, canonical, viewport and JSON-LD. Light-green themed and responsive.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <input id="urlInput" placeholder="Enter page URL (optional - fetch may be blocked by CORS)" style="width:46%">
+        <button id="fetchBtn" class="btn ghost">Fetch URL</button>
+        <div style="width:2%"></div>
+        <button id="analyzeBtn" class="btn primary">Analyze HTML</button>
+        <div class="spacer"></div>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy Report</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+      </div>
+
+      <div class="layout">
+        <section>
+          <label class="small">Paste HTML source here (or fetch a URL above)</label>
+          <textarea id="htmlInput" placeholder="Paste full HTML source here..." spellcheck="false"></textarea>
+
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="saveBtn" class="btn ghost">Save analysis</button>
+            <div style="flex:1"></div>
+            <label class="small">Auto-detect structured data <input type="checkbox" id="detectJsonLd" checked></label>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">Live Suggestions</label>
+            <div id="suggestions" style="margin-top:8px"></div>
+          </div>
+        </section>
+
+        <aside>
+          <div class="card-small">
+            <div class="small">Summary</div>
+            <div class="info" style="margin-top:8px">
+              <div class="card-small">Title: <div id="titleSummary" style="font-weight:700;margin-top:6px">—</div></div>
+              <div class="card-small">Description: <div id="descSummary" style="font-weight:700;margin-top:6px">—</div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">SEO Score</label>
+            <div class="card-small" id="scoreBox" style="margin-top:8px">—</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">Preview snippet</label>
+            <div id="previewSnippet" class="preview-snippet" style="margin-top:8px">Preview will appear here</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">Saved analyses</label>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div style="padding:16px">
+        <label class="small">Full Extracted Meta Tags</label>
+        <div id="results" class="results" style="margin-top:8px">No analysis yet</div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const urlInput = document.getElementById('urlInput');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const htmlInput = document.getElementById('htmlInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const results = document.getElementById('results');
+    const suggestions = document.getElementById('suggestions');
+    const titleSummary = document.getElementById('titleSummary');
+    const descSummary = document.getElementById('descSummary');
+    const previewSnippet = document.getElementById('previewSnippet');
+    const scoreBox = document.getElementById('scoreBox');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const detectJsonLd = document.getElementById('detectJsonLd');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistory = document.getElementById('clearHistory');
+    const STORAGE = 'ti_meta_history_v1';
+
+    async function fetchUrlHtml(url){
+      try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        return {ok:true, text};
+      }catch(e){ return {ok:false, error: e.message}; }
+    }
+
+    fetchBtn.addEventListener('click', async ()=>{
+      const url = urlInput.value.trim(); if(!url) return alert('Enter a URL to fetch');
+      fetchBtn.textContent = 'Fetching...';
+      const out = await fetchUrlHtml(url);
+      fetchBtn.textContent = 'Fetch URL';
+      if(!out.ok){ alert('Could not fetch URL (CORS or network). Paste HTML source instead.\nError: '+out.error); return; }
+      htmlInput.value = out.text; analyze();
+    });
+
+    function parseHtml(html){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      return doc;
+    }
+
+    function getMetaMap(doc){
+      const map = new Map();
+      const title = doc.querySelector('title')?.textContent?.trim() || '';
+      map.set('title', title);
+      const metas = doc.querySelectorAll('meta');
+      metas.forEach(m=>{
+        const name = m.getAttribute('name') || m.getAttribute('property') || m.getAttribute('http-equiv') || null;
+        const content = m.getAttribute('content') || m.getAttribute('value') || '';
+        if(name){
+          // support multiple same names (og tags etc.)
+          if(map.has(name)){
+            const cur = map.get(name);
+            if(Array.isArray(cur)) cur.push(content); else map.set(name, [cur, content]);
+          } else map.set(name, content);
+        }
+      });
+      // canonical
+      const linkCanonical = doc.querySelector('link[rel="canonical"]')?.getAttribute('href') || '';
+      if(linkCanonical) map.set('canonical', linkCanonical);
+      // viewport
+      const viewport = doc.querySelector('meta[name="viewport"]')?.getAttribute('content') || '';
+      if(viewport) map.set('viewport', viewport);
+      // charset
+      const charset = doc.querySelector('meta[charset]')?.getAttribute('charset') || doc.querySelector('meta[http-equiv="Content-Type"]')?.getAttribute('content') || '';
+      if(charset) map.set('charset', charset);
+      // JSON-LD
+      const jsonlds = Array.from(doc.querySelectorAll('script[type="application/ld+json"]')).map(s=>s.textContent.trim());
+      if(jsonlds.length) map.set('json-ld', jsonlds);
+      return map;
+    }
+
+    function scoreMeta(map){
+      let score = 0; const checks = [];
+      const title = map.get('title') || '';
+      if(title){ score += 20; checks.push('Title present'); if(title.length >= 30 && title.length <= 70) score += 5; else checks.push('Title length suboptimal'); }
+      else checks.push('Missing title');
+      const desc = map.get('description') || '';
+      if(desc){ score += 20; checks.push('Meta description present'); if(desc.length >= 50 && desc.length <= 160) score += 5; else checks.push('Meta description length suboptimal'); }
+      else checks.push('Missing meta description');
+      if(map.get('canonical')){ score += 10; checks.push('Canonical present'); }
+      if(map.get('viewport')){ score += 10; checks.push('Viewport present'); }
+      if(map.get('og:title') || map.get('og:description')){ score += 15; checks.push('OpenGraph tags present'); }
+      if(map.get('twitter:title') || map.get('twitter:description')){ score += 5; checks.push('Twitter card tags present'); }
+      if(map.get('json-ld')){ score += 10; checks.push('JSON-LD structured data'); }
+      // clamp 0-100
+      score = Math.max(0, Math.min(100, score));
+      return {score, checks};
+    }
+
+    function buildPreview(title, description, url){
+      const t = title || 'Title missing';
+      const d = description || 'Meta description missing — this snippet previews how the result may appear in search engines.';
+      const u = url || (new URL('https://example.com')).origin;
+      return `<div style="font-weight:700;color:#1b5e20">${escapeHtml(t)}</div><div style="color:#2e7d32">${escapeHtml(u)}</div><div style="margin-top:6px;color:#444">${escapeHtml(d)}</div>`;
+    }
+
+    function renderResults(map, rawHtml){
+      results.innerHTML = '';
+      // common tags to show order
+      const tagsToShow = ['title','description','keywords','canonical','viewport','charset','og:title','og:description','og:image','twitter:card','twitter:title','twitter:description','json-ld'];
+      tagsToShow.forEach(name=>{
+        if(map.has(name)){
+          const val = map.get(name);
+          const row = document.createElement('div'); row.className='tag-row';
+          const k = document.createElement('div'); k.className='tag-name'; k.textContent = name;
+          const v = document.createElement('div'); v.className='tag-val';
+          v.innerHTML = Array.isArray(val) ? val.map(x=>`<div>${escapeHtml(String(x))}</div>`).join('') : `<div>${escapeHtml(String(val))}</div>`;
+          row.appendChild(k); row.appendChild(v); results.appendChild(row);
+        }
+      });
+
+      // also show any other meta entries
+      map.forEach((val, key)=>{
+        if(tagsToShow.includes(key)) return; // already shown
+        const row = document.createElement('div'); row.className='tag-row';
+        const k = document.createElement('div'); k.className='tag-name'; k.textContent = key;
+        const v = document.createElement('div'); v.className='tag-val';
+        v.innerHTML = Array.isArray(val) ? val.map(x=>`<div>${escapeHtml(String(x))}</div>`).join('') : `<div>${escapeHtml(String(val))}</div>`;
+        row.appendChild(k); row.appendChild(v); results.appendChild(row);
+      });
+
+      // suggestions + score
+      const {score, checks} = scoreMeta(map);
+      scoreBox.innerHTML = `<div style="font-size:1.6rem;font-weight:800;color:${score>=70? '#2e7d32':'#c62828'}">${score}</div><div class="small">${checks.join(' · ')}</div>`;
+
+      // preview
+      const previewHtml = buildPreview(map.get('title'), map.get('description'), map.get('canonical') || urlInput.value || '');
+      previewSnippet.innerHTML = previewHtml;
+
+      // suggestions
+      suggestions.innerHTML = '';
+      if(!map.get('title')) suggestions.innerHTML += `<div class="small missing">Add a unique & descriptive &lt;title&gt; (30-70 chars)</div>`;
+      if(!map.get('description')) suggestions.innerHTML += `<div class="small missing">Add a meta description (50-160 chars)</div>`;
+      if(!map.get('canonical')) suggestions.innerHTML += `<div class="small missing">Add a rel="canonical" to avoid duplicate content</div>`;
+      if(!map.get('viewport')) suggestions.innerHTML += `<div class="small missing">Add <code>&lt;meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"&gt;</code> for mobile</div>`;
+      if(map.get('description') && (map.get('description').length < 50 || map.get('description').length > 160)) suggestions.innerHTML += `<div class="small">Meta description length should be 50-160 characters (currently ${map.get('description').length})</div>`;
+      if(map.get('title') && (map.get('title').length < 30 || map.get('title').length > 70)) suggestions.innerHTML += `<div class="small">Title length should be 30-70 characters (currently ${map.get('title').length})</div>`;
+      if(!map.get('og:title') && !map.get('twitter:title')) suggestions.innerHTML += `<div class="small">Consider adding OpenGraph / Twitter meta tags for richer social previews</div>`;
+      if(detectJsonLd.checked && !map.get('json-ld')) suggestions.innerHTML += `<div class="small">No JSON-LD detected. Consider structured data for rich results.</div>`;
+
+      // full raw HTML stats
+      const len = rawHtml ? rawHtml.length : 0;
+      const rawBox = document.createElement('div'); rawBox.className='card-small'; rawBox.style.marginTop='12px'; rawBox.innerHTML = `<div class="small">Raw HTML size</div><div style="font-weight:700">${len} bytes</div>`;
+      results.prepend(rawBox);
+
+      // save last analysis
+      window.__lastMeta = {map: Object.fromEntries(map), html: rawHtml || '', score};
+    }
+
+    function analyze(){
+      const html = htmlInput.value || '';
+      if(!html) return alert('Paste HTML source or fetch a URL first');
+      const doc = parseHtml(html);
+      const map = getMetaMap(doc);
+      renderResults(map, html);
+      renderHistory();
+    }
+
+    analyzeBtn.addEventListener('click', analyze);
+
+    copyBtn.addEventListener('click', async ()=>{
+      if(!window.__lastMeta) return alert('Run an analysis first');
+      const report = JSON.stringify(window.__lastMeta, null, 2);
+      try{ await navigator.clipboard.writeText(report); alert('Report copied to clipboard'); }catch(e){ alert('Copy failed'); }
+    });
+
+    downloadBtn.addEventListener('click', ()=>{
+      if(!window.__lastMeta) return alert('Run an analysis first');
+      const blob = new Blob([JSON.stringify(window.__lastMeta, null, 2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'meta-report.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    clearBtn.addEventListener('click', ()=>{ if(confirm('Clear input and results?')){ htmlInput.value=''; results.innerHTML='No analysis yet'; suggestions.innerHTML=''; previewSnippet.innerHTML='Preview will appear here'; titleSummary.textContent='—'; descSummary.textContent='—'; scoreBox.textContent='—'; window.__lastMeta = null; } });
+
+    // history
+    function saveAnalysis(){ if(!window.__lastMeta) return alert('Run an analysis first'); const raw = JSON.parse(localStorage.getItem(STORAGE) || '[]'); raw.unshift({ts:Date.now(), score: window.__lastMeta.score, title: window.__lastMeta.map.title || '', snippet: (window.__lastMeta.map.description || '').slice(0,200), htmlSize: window.__lastMeta.html.length}); if(raw.length>50) raw.pop(); localStorage.setItem(STORAGE, JSON.stringify(raw)); renderHistory(); alert('Saved analysis'); }
+    saveBtn.addEventListener('click', saveAnalysis);
+    function renderHistory(){ const raw = JSON.parse(localStorage.getItem(STORAGE) || '[]'); historyList.innerHTML = ''; if(!raw.length){ historyList.innerHTML='<div class="small">No saved analyses</div>'; return; } raw.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${new Date(it.ts).toLocaleString()} · Score ${it.score}</div><div class="small">${escapeHtml(it.title)}</div><div class="small">${it.htmlSize} bytes</div>`; el.addEventListener('click', ()=>{ alert('Loading saved HTML preview is not stored for privacy. Only summary info is saved.'); }); historyList.appendChild(el); }); }
+    clearHistory.addEventListener('click', ()=>{ if(confirm('Clear saved analyses?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+
+    function escapeHtml(s){ return (s||'').toString().replace(/[&<>\"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":"&#39;",'`':'&#96;'}[m]; }); }
+
+    // init
+    (function init(){ renderHistory(); results.innerHTML='No analysis yet'; previewSnippet.innerHTML='Preview will appear here'; scoreBox.textContent='—'; })();
+  </script>
+</body>
+</html>
