@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HTML Previewer / Live Editor — Tool i online</title>
+  <meta name="description" content="Live HTML/CSS/JS previewer. Edit code side-by-side and see instant preview. Sky-blue themed, responsive and professional." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --sky:#00bcd4; --sky-600:#0aa3b0; --bg:#f6fdff; --card:#fff; --muted:#334; --radius:12px; --shadow:0 14px 40px rgba(10,120,140,0.06); --maxw:1200px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#042}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:14px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--sky),var(--sky-600));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--sky);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}
+    .panel{display:flex;flex-direction:column;gap:10px}
+    .panel .head{display:flex;align-items:center;gap:8px}
+    textarea, select, input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);font-family:ui-monospace, monospace}
+    textarea{min-height:160px;resize:vertical}
+
+    .editors{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .editor{background:#fbffff;border-radius:10px;padding:8px;display:flex;flex-direction:column}
+    .editor .label{font-weight:700;margin-bottom:6px}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    .preview-wrap{display:flex;flex-direction:column;gap:8px}
+    .preview-toolbar{display:flex;gap:8px;align-items:center}
+    .iframe-box{border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.06);height:520px}
+    iframe#preview{width:100%;height:100%;border:0;display:block}
+
+    .meta{display:flex;gap:8px;align-items:center}
+
+    @media (max-width:1100px){ .layout{grid-template-columns:1fr} .iframe-box{height:420px} .editors{grid-template-columns:1fr} }
+    @media (max-width:600px){ header{gap:8px} h1{font-size:1rem} .iframe-box{height:300px} }
+
+    button:focus,input:focus,textarea:focus{outline:3px solid rgba(0,188,212,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>HTML Previewer — Live Editor</h1>
+        <p class="lead">Edit HTML, CSS & JS and see a live, sandboxed preview. Sky-blue themed, responsive and privacy-first (runs locally).</p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="toolbar">
+        <button id="runBtn" class="btn primary"><i class="fa-solid fa-play"></i> Run Preview</button>
+        <button id="autoBtn" class="btn ghost">Auto-run: <span id="autoState">On</span></button>
+        <button id="openBtn" class="btn ghost">Open in new tab</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+        <div class="spacer"></div>
+        <input id="titleInput" placeholder="Page title (optional)" style="padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+      </div>
+
+      <div class="layout">
+        <div class="panel">
+          <div class="editors">
+            <div class="editor">
+              <div class="label">HTML</div>
+              <textarea id="htmlArea" spellcheck="false"><!-- HTML here -->
+<div class="container">
+  <h1>Hello — live preview</h1>
+  <p>Edit HTML/CSS/JS and click Run or enable Auto-run.</p>
+</div></textarea>
+            </div>
+
+            <div class="editor">
+              <div class="label">CSS</div>
+              <textarea id="cssArea">/* CSS here */
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;padding:24px;background:#f6fdff}
+.container{max-width:900px;margin:0 auto}
+h1{color:#007c88}</textarea>
+            </div>
+          </div>
+
+          <div class="editor">
+            <div class="label">JavaScript</div>
+            <textarea id="jsArea">// JavaScript here
+console.log('Preview ready');</textarea>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button id="copyHtml" class="btn ghost">Copy Full HTML</button>
+            <button id="clearBtn" class="btn ghost">Reset</button>
+            <div style="flex:1"></div>
+            <label class="small">Auto-save <input type="checkbox" id="autosave" checked></label>
+          </div>
+
+          <div style="margin-top:8px;padding:8px" class="small">Notes: preview runs in a sandboxed iframe (scripts are allowed). Use Open in new tab to run un-sandboxed if you need.</div>
+        </div>
+
+        <div class="panel preview-wrap">
+          <div class="preview-toolbar">
+            <div class="small">Preview</div>
+            <div style="flex:1"></div>
+            <div class="meta small">Errors: <span id="errMsg">—</span></div>
+          </div>
+          <div class="iframe-box"><iframe id="preview" sandbox="allow-scripts allow-forms allow-same-origin"></iframe></div>
+
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="screenshotBtn" class="btn ghost">Take Screenshot</button>
+            <button id="copyPreviewHtml" class="btn ghost">Copy Preview HTML</button>
+            <div style="flex:1"></div>
+            <label class="small">Theme: <select id="themeSelect"><option value="light">Light</option><option value="dark">Dark</option></select></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const htmlArea = document.getElementById('htmlArea');
+    const cssArea = document.getElementById('cssArea');
+    const jsArea = document.getElementById('jsArea');
+    const preview = document.getElementById('preview');
+    const runBtn = document.getElementById('runBtn');
+    const autoBtn = document.getElementById('autoBtn');
+    const autoState = document.getElementById('autoState');
+    const openBtn = document.getElementById('openBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyHtmlBtn = document.getElementById('copyHtml');
+    const copyPreviewHtml = document.getElementById('copyPreviewHtml');
+    const clearBtn = document.getElementById('clearBtn');
+    const errMsg = document.getElementById('errMsg');
+    const titleInput = document.getElementById('titleInput');
+    const autosave = document.getElementById('autosave');
+    const screenshotBtn = document.getElementById('screenshotBtn');
+    const themeSelect = document.getElementById('themeSelect');
+
+    const STORAGE = 'ti_live_preview_v1';
+    let auto = true;
+    let autoTimer = null;
+
+    function buildDocument(){
+      const html = htmlArea.value;
+      const css = `<style>${cssArea.value}</style>`;
+      const js = `<script>try{\n${jsArea.value}\n}catch(e){parent.postMessage({type:'preview-error',message:e.message}, '*');}\n<\/script>`;
+      const title = (titleInput.value || 'Preview');
+      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title>${css}</head><body>${html}${js}</body></html>`;
+    }
+
+    function render(){
+      errMsg.textContent = '—';
+      const doc = buildDocument();
+      const blob = new Blob([doc], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      preview.src = url;
+      setTimeout(()=> URL.revokeObjectURL(url), 1500);
+    }
+
+    runBtn.addEventListener('click', ()=> render());
+    autoBtn.addEventListener('click', ()=>{ auto = !auto; autoState.textContent = auto ? 'On' : 'Off'; autoBtn.classList.toggle('primary', auto); if(auto) render(); });
+
+    openBtn.addEventListener('click', ()=>{ const doc = buildDocument(); const w = window.open(); w.document.open(); w.document.write(doc); w.document.close(); });
+
+    downloadBtn.addEventListener('click', ()=>{ const doc = buildDocument(); const blob = new Blob([doc], {type:'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (titleInput.value||'preview') + '.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    copyHtmlBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(buildDocument()); copyHtmlBtn.textContent = 'Copied'; setTimeout(()=> copyHtmlBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Full HTML',1000); }catch(e){ alert('Copy failed'); } });
+
+    copyPreviewHtml.addEventListener('click', async ()=>{ try{ const doc = preview.contentDocument.documentElement.outerHTML; await navigator.clipboard.writeText(doc); copyPreviewHtml.textContent = 'Copied'; setTimeout(()=> copyPreviewHtml.innerHTML = 'Copy Preview HTML',1000); }catch(e){ alert('Cannot copy preview (iframe not loaded)'); } });
+
+    clearBtn.addEventListener('click', ()=>{ if(confirm('Reset editors to default?')){ localStorage.removeItem(STORAGE); location.reload(); } });
+
+    // autosave
+    function saveState(){ if(!autosave.checked) return; const state = {html: htmlArea.value, css: cssArea.value, js: jsArea.value, title: titleInput.value}; localStorage.setItem(STORAGE, JSON.stringify(state)); }
+    function loadState(){ try{ const s = JSON.parse(localStorage.getItem(STORAGE) || '{}'); if(s.html) htmlArea.value = s.html; if(s.css) cssArea.value = s.css; if(s.js) jsArea.value = s.js; if(s.title) titleInput.value = s.title; }catch(e){} }
+    setInterval(saveState, 2500);
+    loadState();
+
+    // live updates
+    [htmlArea, cssArea, jsArea, titleInput].forEach(el=> el.addEventListener('input', ()=>{ if(auto){ clearTimeout(autoTimer); autoTimer = setTimeout(render, 600); } }));
+
+    // receive errors from preview
+    window.addEventListener('message', (ev)=>{ try{ if(ev.data && ev.data.type === 'preview-error'){ errMsg.textContent = ev.data.message; } }catch(e){} });
+
+    // screenshot (basic: draw iframe to canvas — may be blocked by cross-origin)
+    screenshotBtn.addEventListener('click', async ()=>{
+      try{
+        const doc = buildDocument(); const blob = new Blob([doc], {type:'text/html'}); const url = URL.createObjectURL(blob);
+        const win = window.open(url, '_blank'); setTimeout(()=>{ try{ win.focus(); }catch(e){} },500);
+      }catch(e){ alert('Screenshot not supported in this environment'); }
+    });
+
+    // theme select (applies small CSS preview frame background)
+    themeSelect.addEventListener('change', ()=>{ if(themeSelect.value === 'dark'){ preview.style.background='#0b1b22'; } else { preview.style.background=''; } });
+
+    function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+    // initial render
+    render();
+  </script>
+</body>
+</html>
