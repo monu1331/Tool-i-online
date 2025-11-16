@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Typing Speed Test — Tool i online</title>
+  <meta name="description" content="Fast, accurate typing speed test (WPM & accuracy). Yellow themed, responsive and accessible." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --yellow:#FFB300; --yellow-dark:#d18f00; --bg:#fffaf0; --muted:#6b6b6b; --card:#ffffff; --radius:12px; --shadow:0 12px 30px rgba(0,0,0,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#111}
+    .wrap{max-width:1100px;margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo-mark{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,var(--yellow),var(--yellow-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .panel{padding:18px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--yellow);color:#111}
+    .btn.ghost{background:#fff}
+
+    .settings{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    select,input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)}
+
+    .test-area{margin-top:16px;padding:14px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);background:linear-gradient(180deg,#fff,#fffef8)}
+    .text-display{font-size:1.05rem;line-height:1.6;color:#222}
+    .word{padding:2px 4px;border-radius:4px}
+    .word.current{background:rgba(255,179,0,0.18);box-shadow:inset 0 -4px 0 rgba(255,179,0,0.12)}
+    .word.correct{color:green}
+    .word.incorrect{color:#c62828;text-decoration:underline}
+
+    .input-row{margin-top:12px;display:flex;gap:8px;align-items:center}
+    .type-input{flex:1;padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);font-size:1rem}
+
+    .stats{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+    .stat{padding:12px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);min-width:120px;text-align:center}
+    .stat .num{font-weight:800;font-size:1.2rem;color:var(--yellow-dark)}
+
+    .history{margin-top:12px;max-height:28vh;overflow:auto}
+    .history-item{padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);background:#fff;margin-bottom:8px}
+
+    @media (max-width:980px){ .test-area{padding:12px} .text-display{font-size:1rem} }
+    @media (max-width:600px){ .stat{min-width:100px} }
+
+    :focus{outline:3px solid rgba(255,179,0,0.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Typing Speed Test</h1>
+        <p class="lead">Measure typing speed (WPM), accuracy and errors. Includes test lengths, themes and local history. All tests run in your browser.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="panel">
+        <div class="controls">
+          <button id="startBtn" class="btn primary"><i class="fa-solid fa-play"></i> Start Test</button>
+          <button id="resetBtn" class="btn ghost"><i class="fa-solid fa-rotate"></i> Reset</button>
+          <div style="flex:1"></div>
+          <div class="small">Shortcuts: <strong>Enter</strong> to start/submit word, <strong>Esc</strong> to reset</div>
+        </div>
+
+        <div class="settings">
+          <label class="small">Mode
+            <select id="modeSelect">
+              <option value="time">Timed</option>
+              <option value="words">Word count</option>
+            </select>
+          </label>
+
+          <label class="small" id="durationLabel">Duration (sec)
+            <input id="duration" type="number" value="60" min="15" max="600">
+          </label>
+
+          <label class="small" id="wordCountLabel" style="display:none">Words
+            <input id="wordCount" type="number" value="50" min="10" max="500">
+          </label>
+
+          <label class="small">Text source
+            <select id="sourceSelect">
+              <option value="random">Random passages</option>
+              <option value="custom">Custom text</option>
+            </select>
+          </label>
+
+          <label class="small" id="customLabel" style="display:none">Custom
+            <input id="customText" type="text" placeholder="Paste a sentence or paragraph">
+          </label>
+        </div>
+
+        <div class="test-area" aria-live="polite">
+          <div class="text-display" id="textDisplay">Click Start to begin the test. Words will be highlighted as you type.</div>
+
+          <div class="input-row">
+            <input id="typeInput" class="type-input" placeholder="Start typing here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button id="submitWord" class="btn ghost"><i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+
+          <div class="stats" role="status" aria-live="polite">
+            <div class="stat"><div class="small">WPM</div><div class="num" id="wpm">0</div></div>
+            <div class="stat"><div class="small">Accuracy</div><div class="num" id="accuracy">100%</div></div>
+            <div class="stat"><div class="small">Typed</div><div class="num" id="typedCount">0</div></div>
+            <div class="stat"><div class="small">Errors</div><div class="num" id="errors">0</div></div>
+            <div class="stat"><div class="small">Time</div><div class="num" id="timeLeft">0s</div></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Test history (local)</div>
+            <div class="history" id="historyList"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+const passages = [
+  "The quick brown fox jumps over the lazy dog. This pangram contains every letter of the English alphabet and is often used for testing.",
+  "Typing is a skill that improves with practice. Regular short sessions are better than occasional long ones.",
+  "Web performance and good UX go hand in hand. Minimise distractions and provide clear feedback to users.",
+  "Small focused goals help learners build confidence. Track progress and celebrate incremental improvements.",
+  "Accessibility should be part of the design from day one, not an afterthought.",
+  "Consistent practice, patience and accurate feedback are keys to improvement in almost any craft."
+];
+
+// Elements
+const startBtn = document.getElementById('startBtn');
+const resetBtn = document.getElementById('resetBtn');
+const modeSelect = document.getElementById('modeSelect');
+const durationInput = document.getElementById('duration');
+const wordCountInput = document.getElementById('wordCount');
+const sourceSelect = document.getElementById('sourceSelect');
+const customLabel = document.getElementById('customLabel');
+const customText = document.getElementById('customText');
+const textDisplay = document.getElementById('textDisplay');
+const typeInput = document.getElementById('typeInput');
+const submitWord = document.getElementById('submitWord');
+const wpmEl = document.getElementById('wpm');
+const accuracyEl = document.getElementById('accuracy');
+const typedCountEl = document.getElementById('typedCount');
+const errorsEl = document.getElementById('errors');
+const timeLeftEl = document.getElementById('timeLeft');
+const historyList = document.getElementById('historyList');
+const durationLabel = document.getElementById('durationLabel');
+const wordCountLabel = document.getElementById('wordCountLabel');
+
+let words = []; // array of words for the test
+let index = 0;
+let typed = 0;
+let errors = 0;
+let startTime = null;
+let timer = null;
+let running = false;
+let totalCharsTyped = 0;
+
+const STORAGE = 'ti_typing_history_v1';
+
+function sampleTextForWords(n){ const arr = []; while(arr.length < n){ const p = passages[Math.floor(Math.random()*passages.length)]; const split = p.replace(/\n+/g,' ').split(/\s+/).filter(Boolean); arr.push(...split); } return arr.slice(0,n); }
+
+function renderTextDisplay(){ textDisplay.innerHTML = words.map((w,i)=> `<span class="word ${i===index? 'current':''} ${i<index? (w._correct? 'correct':'incorrect') : ''}">${escapeHtml(w.word)}</span>`).join(' '); }
+
+function escapeHtml(s){ return s.replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+function startTest(){
+  resetState();
+  const mode = modeSelect.value;
+  if(sourceSelect.value === 'custom' && customText.value.trim()){
+    const txt = customText.value.trim(); words = txt.split(/\s+/).map(w=> ({word:w}));
+  } else if(mode === 'words'){
+    words = sampleTextForWords(Number(wordCountInput.value) || 50).map(w=>({word:w}));
+  } else {
+    // timed: pick a long sample
+    words = sampleTextForWords(200).map(w=>({word:w}));
+  }
+  renderTextDisplay();
+  typeInput.value = '';
+  typeInput.focus();
+  running = true;
+  startTime = Date.now();
+  if(mode === 'time'){
+    let sec = Number(durationInput.value) || 60;
+    timeLeftEl.textContent = sec + 's';
+    timer = setInterval(()=>{
+      const elapsed = Math.floor((Date.now() - startTime)/1000);
+      const left = Math.max(0, sec - elapsed);
+      timeLeftEl.textContent = left + 's';
+      if(left <= 0){ finishTest(); }
+      updateStats();
+    }, 250);
+  } else {
+    // word-count mode: update time display as running
+    timeLeftEl.textContent = '—';
+    timer = setInterval(()=> updateStats(), 500);
+  }
+}
+
+function resetState(){
+  clearInterval(timer); timer = null; running = false; index = 0; typed = 0; errors = 0; totalCharsTyped = 0; startTime = null; wpmEl.textContent = '0'; accuracyEl.textContent = '100%'; typedCountEl.textContent = '0'; errorsEl.textContent = '0'; timeLeftEl.textContent = '0s'; words = []; renderTextDisplay(); }
+
+function submitCurrent(){ if(!running) return; const input = typeInput.value.trim(); if(!input) return; const current = words[index]; const correct = input === current.word; current._correct = correct; if(!correct) errors++; typed++; totalCharsTyped += input.length; index++; typeInput.value = ''; renderTextDisplay(); updateStats(); // if mode words and reached count then finish
+  if(modeSelect.value === 'words' && index >= (Number(wordCountInput.value) || 50)){ finishTest(); }
+}
+
+function updateStats(){ const elapsedMs = Math.max(1, Date.now() - (startTime || Date.now())); const minutes = elapsedMs / 60000; const grossWpm = (typed / minutes) || 0; const netWpm = Math.max(0, grossWpm - (errors / minutes)); const accuracy = typed > 0 ? Math.round(((typed - errors)/typed)*100) : 100; wpmEl.textContent = Math.round(netWpm); accuracyEl.textContent = accuracy + '%'; typedCountEl.textContent = typed; errorsEl.textContent = errors; }
+
+function finishTest(){ clearInterval(timer); timer = null; running = false; updateStats(); // save result
+  const result = {ts:Date.now(), wpm: Number(wpmEl.textContent), accuracy: accuracyEl.textContent, typed, errors}; saveHistory(result); renderHistory(); alert('Test finished! WPM: ' + result.wpm + ' · Accuracy: ' + result.accuracy);
+}
+
+function saveHistory(res){ try{ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift(res); if(list.length > 50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); }catch(e){} }
+
+function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No test history</div>'; return; } list.forEach(it=>{ const d = new Date(it.ts); const el = document.createElement('div'); el.className = 'history-item'; el.innerHTML = `<div style="font-weight:700">${it.wpm} WPM · ${it.accuracy}</div><div class="small">${d.toLocaleString()} · Typed ${it.typed} words · Errors ${it.errors}</div>`; historyList.appendChild(el); }); }
+
+// events
+startBtn.addEventListener('click', ()=>{ if(running){ finishTest(); } else startTest(); });
+resetBtn.addEventListener('click', ()=>{ if(confirm('Reset test and clear current state?')){ resetState(); } });
+submitWord.addEventListener('click', submitCurrent);
+
+typeInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    e.preventDefault(); submitCurrent();
+  } else if(e.key === 'Escape'){
+    e.preventDefault(); if(confirm('Reset test?')) resetState();
+  }
+});
+
+modeSelect.addEventListener('change', ()=>{
+  if(modeSelect.value === 'time'){ durationLabel.style.display = ''; wordCountLabel.style.display = 'none'; }
+  else { durationLabel.style.display = 'none'; wordCountLabel.style.display = ''; }
+});
+
+sourceSelect.addEventListener('change', ()=>{ customLabel.style.display = sourceSelect.value === 'custom' ? '' : 'none'; });
+
+// init
+renderHistory(); resetState();
+
+</script>
+</body>
+</html>
