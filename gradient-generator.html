@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gradient Generator — Tool I Online</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+  :root {
+    --pink: #e91e63;
+    --pink-light: #fce4ec;
+    --bg: #ffffff;
+    --text: #333;
+    --radius: 14px;
+    --shadow: 0 4px 14px rgba(0,0,0,0.1);
+  }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+  header {
+    background: var(--pink);
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  .container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+  .tool-box {
+    background: #fff;
+    padding: 25px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+  }
+  .preview {
+    width: 100%;
+    height: 260px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 25px;
+  }
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+  }
+  .control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  input[type="color"], input[type="number"], select, input[type="text"] {
+    padding: 10px;
+    border-radius: var(--radius);
+    border: 1px solid #ccc;
+    font-size: 1rem;
+  }
+  button {
+    background: var(--pink);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+  button:hover {
+    background: #c2185b;
+  }
+  .output-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--pink-light);
+    border-radius: var(--radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .output-code {
+    font-family: monospace;
+    font-size: 0.95rem;
+    word-break: break-all;
+  }
+  @media(max-width:600px){
+    header { font-size: 1.5rem; }
+    .preview { height: 180px; }
+  }
+</style>
+</head>
+<body>
+<header>🎨 Gradient Generator</header>
+<div class="container">
+  <div class="tool-box">
+    <div class="preview" id="gradientPreview"></div>
+
+    <div class="controls">
+      <div class="control">
+        <label>Color 1</label>
+        <input type="color" id="color1" value="#e91e63" />
+      </div>
+      <div class="control">
+        <label>Color 2</label>
+        <input type="color" id="color2" value="#9c27b0" />
+      </div>
+      <div class="control">
+        <label>Direction</label>
+        <select id="direction">
+          <option value="to right">Left → Right</option>
+          <option value="to left">Right → Left</option>
+          <option value="to bottom">Top → Bottom</option>
+          <option value="to top">Bottom → Top</option>
+          <option value="135deg">Diagonal ↘</option>
+          <option value="45deg">Diagonal ↗</option>
+        </select>
+      </div>
+      <div class="control">
+        <label>CSS Output</label>
+        <input type="text" id="cssOutput" readonly />
+      </div>
+    </div>
+
+    <br />
+    <button id="copyBtn"><i class="fas fa-copy"></i> Copy CSS</button>
+
+    <div class="output-box">
+      <div class="output-code" id="finalCSS"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const preview = document.getElementById('gradientPreview');
+  const color1 = document.getElementById('color1');
+  const color2 = document.getElementById('color2');
+  const direction = document.getElementById('direction');
+  const cssOutput = document.getElementById('cssOutput');
+  const finalCSS = document.getElementById('finalCSS');
+  const copyBtn = document.getElementById('copyBtn');
+
+  function updateGradient() {
+    const grad = `linear-gradient(${direction.value}, ${color1.value}, ${color2.value})`;
+    preview.style.background = grad;
+    cssOutput.value = grad;
+    finalCSS.textContent = `background: ${grad};`;
+  }
+
+  color1.addEventListener('input', updateGradient);
+  color2.addEventListener('input', updateGradient);
+  direction.addEventListener('change', updateGradient);
+
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(`background: ${cssOutput.value};`);
+    copyBtn.innerHTML = "Copied! ✔";
+    setTimeout(() => copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy CSS', 1200);
+  });
+
+  updateGradient();
+</script>
+</body>
+</html>
