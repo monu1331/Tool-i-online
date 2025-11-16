@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Word & Character Counter — Tool i online</title>
+  <meta name="description" content="Accurate live word, character, sentence and reading-time counter. Clean responsive UI with yellow theme." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --yellow:#FFB300; --yellow-dark:#d18f00; --bg:#fffaf0; --muted:#6b6b6b; --card:#ffffff; --radius:12px; --shadow:0 12px 30px rgba(0,0,0,0.06); --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo-mark{width:50px;height:50px;border-radius:10px;background:linear-gradient(180deg,var(--yellow),var(--yellow-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .panel{padding:16px}
+    label{font-size:0.95rem;color:var(--muted);display:block;margin-bottom:8px}
+    textarea{width:100%;min-height:260px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem;resize:vertical}
+
+    .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--yellow);color:#111}
+    .btn.ghost{background:#fff}
+
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+    .stat{padding:12px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.04)}
+    .stat h3{margin:0;font-size:0.95rem;color:var(--muted)}
+    .stat .value{font-size:1.4rem;font-weight:800;color:var(--yellow-dark);margin-top:6px}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    .aside{padding:16px;border-left:1px solid rgba(0,0,0,0.04)}
+    .preview{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);min-height:120px;background:linear-gradient(180deg,#fff,#fffef8);white-space:pre-wrap}
+
+    .history{max-height:36vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .aside{border-left:none;border-top:1px solid rgba(0,0,0,0.04)} }
+    @media (max-width:480px){ .logo-mark{width:44px;height:44px} textarea{min-height:160px} }
+
+    button:focus,textarea:focus{outline:3px solid rgba(255,179,0,0.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Word & Character Counter</h1>
+        <p class="lead">Live counts for words, characters, sentences, paragraphs, estimated reading time and more. Yellow-themed and responsive.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="panel">
+          <label for="textInput">Enter your text</label>
+          <textarea id="textInput" placeholder="Type or paste text here..." aria-label="Text input"></textarea>
+
+          <div class="controls">
+            <button class="btn primary" id="clearBtn">Clear</button>
+            <button class="btn ghost" id="copyBtn"><i class="fa-solid fa-copy"></i> Copy</button>
+            <button class="btn ghost" id="downloadBtn"><i class="fa-solid fa-download"></i> Download</button>
+            <button class="btn ghost" id="saveBtn"><i class="fa-solid fa-save"></i> Save to history</button>
+            <div style="flex:1"></div>
+            <div class="small">Reading speed: <input id="wpm" type="number" value="200" min="50" max="1000" style="width:84px;padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)"> wpm</div>
+          </div>
+
+          <div class="stats" aria-live="polite">
+            <div class="stat"><h3>Words</h3><div class="value" id="wordCount">0</div><div class="small">Unique: <span id="uniqueCount">0</span></div></div>
+            <div class="stat"><h3>Characters</h3><div class="value" id="charCount">0</div><div class="small">Without spaces: <span id="charNoSpace">0</span></div></div>
+            <div class="stat"><h3>Sentences</h3><div class="value" id="sentCount">0</div><div class="small">Avg words/sentence: <span id="avgWordsSent">0</span></div></div>
+            <div class="stat"><h3>Paragraphs</h3><div class="value" id="paraCount">0</div><div class="small">Estimated reading time: <span id="readTime">0 min</span></div></div>
+          </div>
+
+        </section>
+
+        <aside class="aside">
+          <h3 style="margin-top:0">Preview & Tools</h3>
+          <div class="preview" id="preview">Nothing to preview</div>
+
+          <div style="margin-top:12px">
+            <label for="find">Find</label>
+            <input id="find" type="text" placeholder="Search text" style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn ghost" id="findPrev">Prev</button>
+              <button class="btn ghost" id="findNext">Next</button>
+              <button class="btn ghost" id="clearHighlights">Clear highlights</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn ghost" id="clearHistory">Clear history</button>
+              <button class="btn ghost" id="exportHistory">Export</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const textInput = document.getElementById('textInput');
+    const wordCountEl = document.getElementById('wordCount');
+    const uniqueCountEl = document.getElementById('uniqueCount');
+    const charCountEl = document.getElementById('charCount');
+    const charNoSpaceEl = document.getElementById('charNoSpace');
+    const sentCountEl = document.getElementById('sentCount');
+    const paraCountEl = document.getElementById('paraCount');
+    const avgWordsSentEl = document.getElementById('avgWordsSent');
+    const readTimeEl = document.getElementById('readTime');
+    const previewEl = document.getElementById('preview');
+    const wpmEl = document.getElementById('wpm');
+
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const findInput = document.getElementById('find');
+    const findPrev = document.getElementById('findPrev');
+    const findNext = document.getElementById('findNext');
+    const clearHighlights = document.getElementById('clearHighlights');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+
+    const STORAGE = 'ti_wc_history_v1';
+
+    function countAll(text){
+      const chars = text.length;
+      const charsNoSpace = text.replace(/\s+/g,'').length;
+      // words: sequences of word characters or unicode letters/punct
+      const words = (text.trim().match(/\b[\p{L}0-9'’-]+\b/gu) || []).map(w=>w.replace(/^'+|'+$/g,'')).filter(Boolean);
+      const wordCount = words.length;
+      const unique = Array.from(new Set(words.map(w=>w.toLowerCase()))).length;
+      // sentences: split by ., ?, ! (naive)
+      const sentences = (text.trim().match(/[\w\)\"]([\.\!\?])+\s*|[\n]{2,}/g) || []);
+      // better fallback: count occurrences of .,!,? with letters before
+      const sentCount = Math.max(0, (text.match(/[\.\!\?](?=\s|$)/g)||[]).length) || (text.trim() ? 1 : 0);
+      // paragraphs: split by two or more newlines
+      const paras = text.split(/\n{2,}/).map(p=>p.trim()).filter(Boolean).length;
+      // avg words per sentence
+      const avgWordsSent = sentCount > 0 ? Math.round(wordCount / sentCount) : wordCount;
+      return {chars, charsNoSpace, wordCount, unique, sentCount, paras, avgWordsSent};
+    }
+
+    function estimateReadTime(words, wpm){ const mins = words / (wpm || 200); if(mins < 1) return Math.round(mins*60) + ' sec'; return Math.round(mins) + ' min'; }
+
+    function update(){
+      const txt = textInput.value || '';
+      const stats = countAll(txt);
+      wordCountEl.textContent = stats.wordCount;
+      uniqueCountEl.textContent = stats.unique;
+      charCountEl.textContent = stats.chars;
+      charNoSpaceEl.textContent = stats.charsNoSpace;
+      sentCountEl.textContent = stats.sentCount;
+      paraCountEl.textContent = stats.paras;
+      avgWordsSentEl.textContent = stats.avgWordsSent;
+      readTimeEl.textContent = estimateReadTime(stats.wordCount, Number(wpmEl.value || 200));
+      previewEl.innerHTML = escapeHtml(txt) || 'Nothing to preview';
+    }
+
+    function escapeHtml(unsafe){ return unsafe.replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','`':'&#96;'}[m]; }); }
+
+    textInput.addEventListener('input', update);
+    wpmEl.addEventListener('input', update);
+
+    // actions
+    clearBtn.addEventListener('click', ()=>{ if(!textInput.value) return; if(!confirm('Clear text?')) return; textInput.value=''; update(); });
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(textInput.value); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000);}catch(e){ alert('Copy failed'); } });
+    downloadBtn.addEventListener('click', ()=>{ const blob = new Blob([textInput.value], {type:'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'text.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    // find & highlight
+    let currentFindIndex = -1; let findMatches = [];
+    function findAll(term){ findMatches = []; currentFindIndex = -1; if(!term) return; const txt = textInput.value; const re = new RegExp(escapeRegExp(term), 'gi'); let m; while((m = re.exec(txt)) !== null){ findMatches.push({start:m.index, end: m.index + m[0].length}); if(re.lastIndex === m.index) re.lastIndex++; } highlightMatches(); }
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
+    function highlightMatches(){ const txt = textInput.value; if(!findMatches.length){ previewEl.innerHTML = escapeHtml(txt); return; } let out = ''; let last = 0; findMatches.forEach((range,idx)=>{ out += escapeHtml(txt.slice(last, range.start)); out += `<mark data-idx="${idx}" style="background:yellow;color:#000">${escapeHtml(txt.slice(range.start, range.end))}</mark>`; last = range.end; }); out += escapeHtml(txt.slice(last)); previewEl.innerHTML = out; }
+    findInput.addEventListener('input', ()=> findAll(findInput.value));
+    findNext.addEventListener('click', ()=>{ if(!findMatches.length) return; currentFindIndex = (currentFindIndex + 1) % findMatches.length; scrollToMatch(currentFindIndex); });
+    findPrev.addEventListener('click', ()=>{ if(!findMatches.length) return; currentFindIndex = (currentFindIndex - 1 + findMatches.length) % findMatches.length; scrollToMatch(currentFindIndex); });
+    clearHighlights.addEventListener('click', ()=>{ findInput.value=''; findMatches=[]; highlightMatches(); });
+    function scrollToMatch(idx){ const mark = previewEl.querySelector(`mark[data-idx="${idx}"]`); if(mark){ mark.scrollIntoView({behavior:'smooth', block:'center'}); mark.style.boxShadow='0 0 0 3px rgba(255,179,0,0.4)'; setTimeout(()=> mark.style.boxShadow='',500); } }
+
+    // history
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach((it, idx)=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${escapeHtml(it.preview)}</div><div class="small">${new Date(it.ts).toLocaleString()}</div>`; el.addEventListener('click', ()=>{ textInput.value = it.text; update(); }); historyList.appendChild(el); }); }
+    saveBtn.addEventListener('click', ()=>{ const txt = textInput.value; if(!txt) return alert('Nothing to save'); const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), text: txt, preview: txt.slice(0,120)}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); });
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+    exportHistoryBtn.addEventListener('click', ()=>{ const raw = localStorage.getItem(STORAGE) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'wc-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    // init
+    update(); renderHistory();
+  </script>
+</body>
+</html>
