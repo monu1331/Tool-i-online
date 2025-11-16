@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Random Gradient Background Generator — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --pink:#D81B60; --pink-dark:#b0174a; --bg:#ffffff; --muted:#666; --radius:12px; --shadow:0 10px 28px rgba(0,0,0,0.06); --container:1100px }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#fff,#fbfbfb);color:#222;padding:20px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:var(--shadow)}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .control{display:flex;flex-direction:column;gap:6px}
+    input[type=color], input[type=number], select, input[type=text]{padding:10px;border-radius:10px;border:1px solid #eee}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--pink);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee}
+
+    .preview{border-radius:12px;min-height:260px;box-shadow:var(--shadow);overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .preview .meta{position:absolute;top:12px;left:12px;background:rgba(255,255,255,0.6);backdrop-filter:blur(4px);padding:8px;border-radius:8px;font-size:13px}
+
+    .stops{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .stop{display:flex;gap:6px;align-items:center}
+    .stop input[type=color]{width:44px;height:36px;padding:0;border-radius:8px}
+    .stop input[type=number]{width:70px}
+
+    .preset-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .preset{padding:7px 10px;border-radius:8px;border:1px solid #eee;background:#fff;cursor:pointer}
+
+    .output{margin-top:12px;display:flex;gap:8px;flex-direction:column}
+    .code{font-family:monospace;background:#fafafa;padding:10px;border-radius:8px;border:1px solid #f0f0f0;word-break:break-all}
+
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Random Gradient Background Generator</h1>
+        <div class="lead">Generate beautiful random linear or radial gradients. Pink-themed, responsive, with copy/export options.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="controls">
+              <div class="control">
+                <label class="muted">Type</label>
+                <select id="gType"><option value="linear">Linear</option><option value="radial">Radial</option></select>
+              </div>
+
+              <div class="control">
+                <label class="muted">Direction / Position</label>
+                <select id="gDir">
+                  <option value="to right">Left → Right</option>
+                  <option value="to left">Right → Left</option>
+                  <option value="to bottom">Top → Bottom</option>
+                  <option value="to top">Bottom → Top</option>
+                  <option value="45deg">45°</option>
+                  <option value="135deg">135°</option>
+                </select>
+              </div>
+
+              <div class="control">
+                <label class="muted">Color stops</label>
+                <div id="stops" class="stops"></div>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button id="addStop" class="btn ghost">+ Add Stop</button>
+                  <button id="removeStop" class="btn ghost">- Remove Stop</button>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;align-items:flex-end">
+                <button id="randomBtn" class="btn primary"><i class="fa-solid fa-random"></i> Randomize</button>
+                <button id="applyBtn" class="btn ghost">Apply</button>
+                <button id="copyBtn" class="btn ghost">Copy CSS</button>
+              </div>
+            </div>
+
+            <div class="muted">Presets</div>
+            <div class="preset-list">
+              <div class="preset" data-grad="linear-gradient(90deg,#ff9a9e,#fad0c4)">Soft Pink</div>
+              <div class="preset" data-grad="linear-gradient(90deg,#a18cd1,#fbc2eb)">Lavender</div>
+              <div class="preset" data-grad="linear-gradient(90deg,#f6d365,#fda085)">Sunrise</div>
+              <div class="preset" data-grad="linear-gradient(90deg,#84fab0,#8fd3f4)">Aqua</div>
+            </div>
+
+            <div class="muted">Preview</div>
+            <div id="preview" class="preview card" style="position:relative">
+              <div class="meta" id="meta">—</div>
+            </div>
+
+            <div class="output">
+              <div class="muted">CSS</div>
+              <div id="cssCode" class="code">—</div>
+              <div style="display:flex;gap:8px">
+                <button id="downloadPng" class="btn ghost">Download PNG</button>
+                <button id="downloadSvg" class="btn ghost">Download SVG</button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <aside>
+          <div class="card">
+            <div class="muted">Quick settings</div>
+            <div style="margin-top:8px">
+              <label class="muted">Stops count</label>
+              <input id="countInput" type="number" min="2" max="8" value="3">
+            </div>
+            <div style="margin-top:12px">
+              <button id="shuffleColors" class="btn ghost">Shuffle Colors</button>
+              <button id="savePreset" class="btn ghost">Save Preset</button>
+            </div>
+            <div style="margin-top:12px" class="muted">Note: Use Randomize to generate new beautiful gradients fast.</div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // helpers
+    function randHex(){ return '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'); }
+    function makeStopEl(color, pos=''){
+      const div = document.createElement('div'); div.className='stop';
+      const colorInput = document.createElement('input'); colorInput.type='color'; colorInput.value = color;
+      const posInput = document.createElement('input'); posInput.type='number'; posInput.min=0; posInput.max=100; posInput.placeholder='pos %'; posInput.value = pos;
+      div.appendChild(colorInput); div.appendChild(posInput);
+      return div;
+    }
+
+    const stopsContainer = document.getElementById('stops');
+    const countInput = document.getElementById('countInput');
+    const addStop = document.getElementById('addStop');
+    const removeStop = document.getElementById('removeStop');
+    const randomBtn = document.getElementById('randomBtn');
+    const applyBtn = document.getElementById('applyBtn');
+    const preview = document.getElementById('preview');
+    const cssCode = document.getElementById('cssCode');
+    const copyBtn = document.getElementById('copyBtn');
+    const gType = document.getElementById('gType');
+    const gDir = document.getElementById('gDir');
+    const meta = document.getElementById('meta');
+    const downloadPng = document.getElementById('downloadPng');
+    const downloadSvg = document.getElementById('downloadSvg');
+    const countBtn = document.getElementById('countInput');
+    const shuffleColors = document.getElementById('shuffleColors');
+
+    function setStops(n){ stopsContainer.innerHTML=''; for(let i=0;i<n;i++){ const pos = Math.round((i/(n-1))*100); stopsContainer.appendChild(makeStopEl(randHex(), pos)); }
+    }
+
+    function getStops(){ const stops = []; Array.from(stopsContainer.children).forEach(ch=>{ const c = ch.querySelector('input[type=color]').value; const p = ch.querySelector('input[type=number]').value; stops.push({color:c, pos: p===''? null: Number(p)}); }); return stops; }
+
+    function buildGradient(){ const stops = getStops(); const parts = stops.map(s=> s.pos !== null ? `${s.color} ${s.pos}%` : s.color ); if(gType.value === 'linear'){ return `linear-gradient(${gDir.value}, ${parts.join(', ')})`; } else { // radial
+      return `radial-gradient(circle at center, ${parts.join(', ')})`; }
+    }
+
+    function applyPreview(){ const grad = buildGradient(); preview.style.background = grad; cssCode.textContent = `background: ${grad};` ; meta.textContent = `${gType.value} — ${stopsContainer.children.length} stops`; }
+
+    // initial
+    setStops(Number(countInput.value)); applyPreview();
+
+    addStop.addEventListener('click', ()=>{ if(stopsContainer.children.length < 8) stopsContainer.appendChild(makeStopEl(randHex(), 50)); applyPreview(); });
+    removeStop.addEventListener('click', ()=>{ if(stopsContainer.children.length>2) stopsContainer.removeChild(stopsContainer.lastChild); applyPreview(); });
+    countInput.addEventListener('change', ()=>{ const n = Math.max(2, Math.min(8, Number(countInput.value)||3)); countInput.value = n; setStops(n); applyPreview(); });
+
+    randomBtn.addEventListener('click', ()=>{ setStops(Number(countInput.value)); applyPreview(); });
+    applyBtn.addEventListener('click', applyPreview);
+    copyBtn.addEventListener('click', ()=>{ navigator.clipboard.writeText(cssCode.textContent); copyBtn.textContent='Copied'; setTimeout(()=>copyBtn.textContent='Copy CSS',1200); });
+
+    document.querySelectorAll('.preset').forEach(p=> p.addEventListener('click', ()=>{ preview.style.background = p.dataset.grad; cssCode.textContent = `background: ${p.dataset.grad};`; meta.textContent='Preset'; }));
+
+    // download PNG
+    downloadPng.addEventListener('click', ()=>{
+      const rect = preview.getBoundingClientRect(); const w = Math.max(600, rect.width); const h = Math.max(400, rect.height);
+      const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d'); // use CSS gradient by creating an offscreen div
+      const grad = buildGradient(); // draw via SVG
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'><foreignObject width='100%' height='100%'><div xmlns='http://www.w3.org/1999/xhtml' style='width:${w}px;height:${h}px;background:${grad};'></div></foreignObject></svg>`;
+      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      const img = new Image(); img.onload = ()=>{ ctx.drawImage(img,0,0); URL.revokeObjectURL(img.src); canvas.toBlob(b=>{ const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'gradient.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000); }); };
+      img.src = url;
+    });
+
+    downloadSvg.addEventListener('click', ()=>{ const grad = buildGradient(); const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='0'>`;
+      // create stops from getStops()
+      const stops = getStops(); let stopsSvg=''; stops.forEach((s,i)=>{ const offset = s.pos !== null ? s.pos/100 : i/(stops.length-1); stopsSvg += `<stop offset='${offset}' stop-color='${s.color}' />`; });
+      const type = gType.value === 'linear' ? `<linearGradient id='g' x1='0' x2='1' y1='0' y2='0'>${stopsSvg}</linearGradient>` : `<radialGradient id='g' cx='50%' cy='50%' r='50%'>${stopsSvg}</radialGradient>`;
+      const final = `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'>${type}<rect x='0' y='0' width='100%' height='100%' fill='url(#g)' /></svg>`;
+      const blob = new Blob([final], {type:'image/svg+xml'}); const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'gradient.svg'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000);
+    });
+
+    shuffleColors.addEventListener('click', ()=>{ const stops = getStops().map(s=>s.color).sort(()=>Math.random()-0.5); // assign back
+      Array.from(stopsContainer.children).forEach((ch,i)=>{ ch.querySelector('input[type=color]').value = stops[i % stops.length]; }); applyPreview(); });
+
+    // save preset (localStorage)
+    const savePresetBtn = document.getElementById('savePreset');
+    savePresetBtn.addEventListener('click', ()=>{
+      const grad = buildGradient(); const presets = JSON.parse(localStorage.getItem('grad_presets')||'[]'); presets.push(grad); localStorage.setItem('grad_presets', JSON.stringify(presets)); alert('Preset saved locally');
+    });
+
+    // allow editing stops live
+    stopsContainer.addEventListener('input', ()=> applyPreview());
+
+    // init
+    (function init(){ applyPreview(); })();
+  </script>
+</body>
+</html>
