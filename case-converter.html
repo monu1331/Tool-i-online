@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Text Case Converter — Tool i online</title>
+  <meta name="description" content="Convert text between cases (UPPER, lower, Title Case, Sentence case, camelCase, snake_case, kebab-case) — responsive, accessible, yellow themed." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --yellow:#FFB300; --yellow-dark:#d18f00; --bg:#fff7eb; --muted:#6b6b6b; --card:#ffffff; --radius:12px; --shadow:0 12px 30px rgba(0,0,0,0.06); --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:var(--bg);color:#111}
+
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo-mark{width:50px;height:50px;border-radius:10px;background:linear-gradient(180deg,var(--yellow),var(--yellow-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .panel{padding:16px}
+    label{font-size:0.95rem;color:var(--muted);display:block;margin-bottom:8px}
+    textarea{width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem;resize:vertical}
+
+    .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--yellow);color:#111}
+    .btn.ghost{background:#fff}
+    .btn.warn{background:#fff7d6;border:1px solid rgba(0,0,0,0.04)}
+
+    .tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+    .tool{padding:10px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px;cursor:pointer}
+    .tool i{color:var(--yellow-dark)}
+
+    .meta{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:12px}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    /* preview */
+    .preview{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);min-height:160px;background:linear-gradient(180deg,#fff,#fffef8);white-space:pre-wrap}
+
+    .history{max-height:36vh;overflow:auto;margin-top:8px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+    @media (max-width:480px){ .logo-mark{width:44px;height:44px} textarea{min-height:160px} }
+
+    /* focus */
+    button:focus,textarea:focus{outline:3px solid rgba(255,179,0,0.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo-mark">Ti</div>
+        <div>
+          <h1>Text Case Converter</h1>
+          <p class="lead">Convert and clean text — UPPER, lower, Title Case, camelCase, snake_case, kebab-case, Sentence case and more.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+
+        <section class="panel">
+          <label for="inputText">Paste or type your text</label>
+          <textarea id="inputText" placeholder="Paste text here..." aria-label="Input text"></textarea>
+
+          <div class="controls" aria-hidden="false">
+            <button class="btn primary" id="toUpper">UPPERCASE</button>
+            <button class="btn primary" id="toLower">lowercase</button>
+            <button class="btn" id="toTitle">Title Case</button>
+            <button class="btn" id="toSentence">Sentence case</button>
+            <button class="btn" id="toToggle">tOGGLE cASE</button>
+            <button class="btn" id="toCamel">camelCase</button>
+            <button class="btn" id="toPascal">PascalCase</button>
+            <button class="btn" id="toSnake">snake_case</button>
+            <button class="btn" id="toKebab">kebab-case</button>
+            <button class="btn" id="removeSpaces">Remove extra spaces</button>
+          </div>
+
+          <div class="meta">
+            <div class="small">Words: <span id="wordCount">0</span> · Characters: <span id="charCount">0</span></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn" id="copyBtn"><i class="fa-solid fa-copy"></i> Copy</button>
+              <button class="btn" id="downloadBtn"><i class="fa-solid fa-download"></i> Download</button>
+              <button class="btn" id="clearBtn">Clear</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label for="findInput">Find & Replace (optional)</label>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="findInput" type="text" placeholder="Find" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+              <input id="replaceInput" type="text" placeholder="Replace" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+              <button class="btn ghost" id="replaceBtn">Replace</button>
+            </div>
+          </div>
+
+        </section>
+
+        <aside class="panel" aria-labelledby="preview-title">
+          <h3 id="preview-title" style="margin:0 0 8px 0">Preview</h3>
+          <div class="preview" id="preview" aria-live="polite"></div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history (local)</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn ghost" id="saveBtn">Save</button>
+              <button class="btn ghost" id="clearHistory">Clear history</button>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const inputText = document.getElementById('inputText');
+    const preview = document.getElementById('preview');
+    const wordCount = document.getElementById('wordCount');
+    const charCount = document.getElementById('charCount');
+
+    // buttons
+    const toUpper = document.getElementById('toUpper');
+    const toLower = document.getElementById('toLower');
+    const toTitle = document.getElementById('toTitle');
+    const toSentence = document.getElementById('toSentence');
+    const toToggle = document.getElementById('toToggle');
+    const toCamel = document.getElementById('toCamel');
+    const toPascal = document.getElementById('toPascal');
+    const toSnake = document.getElementById('toSnake');
+    const toKebab = document.getElementById('toKebab');
+    const removeSpaces = document.getElementById('removeSpaces');
+
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const replaceBtn = document.getElementById('replaceBtn');
+    const findInput = document.getElementById('findInput');
+    const replaceInput = document.getElementById('replaceInput');
+    const saveBtn = document.getElementById('saveBtn');
+    const historyList = document.getElementById('historyList');
+    const clearHistory = document.getElementById('clearHistory');
+
+    const STORAGE = 'ti_textcase_history_v1';
+
+    // Utils
+    function updatePreview(){
+      const t = inputText.value;
+      preview.textContent = t || 'Nothing to preview';
+      wordCount.textContent = countWords(t);
+      charCount.textContent = t.length;
+    }
+
+    function countWords(str){ if(!str) return 0; return (str.trim().match(/\S+/g) || []).length; }
+
+    function titleCase(str){
+      return str.toLowerCase().replace(/(^|[^a-z0-9])([a-z])/g, (m,p1,p2)=> p1 + p2.toUpperCase());
+    }
+
+    function sentenceCase(str){
+      // split by sentence enders
+      return str.toLowerCase().replace(/(^\s*|[\.!?]\s+)([a-z])/g, (m,p1,p2)=> p1 + p2.toUpperCase());
+    }
+
+    function toggleCase(str){
+      return Array.from(str).map(ch=>{ if(ch === ch.toLowerCase()) return ch.toUpperCase(); return ch.toLowerCase(); }).join('');
+    }
+
+    function toCamelCase(str){
+      const s = str.replace(/[\-_]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+      return s.split(' ').map((w,i)=> i===0 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join('');
+    }
+
+    function toPascalCase(str){
+      const s = str.replace(/[\-_]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+      return s.split(' ').map(w=> w.charAt(0).toUpperCase() + w.slice(1)).join('');
+    }
+
+    function toSnakeCase(str){
+      return str.replace(/[\s\-]+/g,' ').trim().toLowerCase().split(' ').filter(Boolean).join('_');
+    }
+
+    function toKebabCase(str){
+      return str.replace(/[\s_]+/g,' ').trim().toLowerCase().split(' ').filter(Boolean).join('-');
+    }
+
+    function removeExtraSpaces(str){ return str.replace(/\s+/g,' ').trim(); }
+
+    // Actions
+    toUpper.addEventListener('click', ()=>{ inputText.value = inputText.value.toUpperCase(); updatePreview(); });
+    toLower.addEventListener('click', ()=>{ inputText.value = inputText.value.toLowerCase(); updatePreview(); });
+    toTitle.addEventListener('click', ()=>{ inputText.value = titleCase(inputText.value); updatePreview(); });
+    toSentence.addEventListener('click', ()=>{ inputText.value = sentenceCase(inputText.value); updatePreview(); });
+    toToggle.addEventListener('click', ()=>{ inputText.value = toggleCase(inputText.value); updatePreview(); });
+    toCamel.addEventListener('click', ()=>{ inputText.value = toCamelCase(inputText.value); updatePreview(); });
+    toPascal.addEventListener('click', ()=>{ inputText.value = toPascalCase(inputText.value); updatePreview(); });
+    toSnake.addEventListener('click', ()=>{ inputText.value = toSnakeCase(inputText.value); updatePreview(); });
+    toKebab.addEventListener('click', ()=>{ inputText.value = toKebabCase(inputText.value); updatePreview(); });
+    removeSpaces.addEventListener('click', ()=>{ inputText.value = removeExtraSpaces(inputText.value); updatePreview(); });
+
+    // copy / download / clear
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(inputText.value); copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); } });
+    downloadBtn.addEventListener('click', ()=>{ const blob = new Blob([inputText.value], {type:'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'text.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+    clearBtn.addEventListener('click', ()=>{ if(!inputText.value) return; if(!confirm('Clear text?')) return; inputText.value = ''; updatePreview(); });
+
+    // find & replace
+    replaceBtn.addEventListener('click', ()=>{
+      const find = findInput.value; const rep = replaceInput.value; if(!find) return alert('Enter text to find');
+      // simple replace all, not regex
+      const escaped = find.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&');
+      const re = new RegExp(escaped,'g');
+      inputText.value = inputText.value.replace(re, rep);
+      updatePreview();
+    });
+
+    // live update
+    inputText.addEventListener('input', updatePreview);
+
+    // history
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach((it,idx)=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${it.preview}</div><div class="small">${new Date(it.ts).toLocaleString()}</div>`; el.addEventListener('click', ()=>{ inputText.value = it.text; updatePreview(); }); historyList.appendChild(el); }); }
+
+    saveBtn.addEventListener('click', ()=>{
+      const txt = inputText.value; if(!txt) return alert('Nothing to save');
+      const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : [];
+      list.unshift({ts:Date.now(), text: txt, preview: txt.slice(0,120).replace(/\n/g,' ') }); if(list.length>30) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory();
+    });
+
+    clearHistory.addEventListener('click', ()=>{ if(confirm('Clear saved history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+
+    // init
+    updatePreview(); renderHistory();
+
+  </script>
+</body>
+</html>
