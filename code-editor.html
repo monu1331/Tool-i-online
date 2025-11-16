@@ -3,199 +3,311 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Code Editor — Tool i online</title>
-  <meta name="description" content="Lightweight in-browser code editor: HTML / CSS / JS panes + live preview. Sky-blue themed, responsive, mobile friendly." />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>SkyBlue — Lightweight Code Editor</title>
   <style>
-    :root{ --sky:#00bcd4; --sky-dark:#0aa3b0; --bg:#f6fdff; --card:#ffffff; --muted:#556; --radius:12px; --shadow:0 10px 30px rgba(10,120,140,0.08); --maxw:1200px }
+    :root{
+      --sky:#69b7ff;
+      --sky-600:#3fa9ff;
+      --bg:#f6fbff;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent-contrast:#012a4a;
+      --radius:12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+    }
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#072;}
-    .wrap{max-width:var(--maxw);margin:18px auto;padding:14px}
-    header{display:flex;align-items:center;gap:14px;margin-bottom:12px}
-    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
-    h1{font-size:1.1rem;margin:0}
-    p.lead{margin:2px 0 0;color:var(--muted);font-size:0.95rem}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{background:linear-gradient(180deg,var(--bg),#eef8ff);color:#0b1220}
 
-    .card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
-    .toolbar{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.04)}
-    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
-    .btn.primary{background:var(--sky);color:#fff}
-    .btn.ghost{background:#fff}
-    .spacer{flex:1}
+    /* Layout */
+    .app{display:grid;grid-template-columns:360px 1fr 540px;gap:18px;padding:20px;height:100vh}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 22px rgba(2,48,71,0.06);padding:14px;display:flex;flex-direction:column}
 
-    .editor-layout{display:grid;grid-template-columns:1fr 420px;gap:12px;padding:12px}
-    .panes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-    .pane{background:#0ff;min-height:220px;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
-    .pane .head{padding:8px 10px;background:linear-gradient(90deg,rgba(0,0,0,0.02),rgba(0,0,0,0.01));border-bottom:1px solid rgba(0,0,0,0.04);display:flex;align-items:center;gap:8px}
-    .pane .head .title{font-weight:700;color:var(--muted)}
-    .pane .body{flex:1;min-height:160px}
+    /* Sidebar / files */
+    .sidebar{min-width:220px}
+    .brand{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--sky),var(--sky-600));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-family:var(--mono)}
+    .brand h1{font-size:14px;margin:0}
+    .files{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+    .file-item{padding:10px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer}
+    .file-item.active{background:linear-gradient(90deg,rgba(105,183,255,0.12),rgba(63,169,255,0.06));border:1px solid rgba(63,169,255,0.12)}
+    .file-name{font-family:var(--mono);color:var(--accent-contrast)}
+    .small{font-size:12px;color:var(--muted)}
 
-    .preview-wrap{display:flex;flex-direction:column;gap:8px}
-    .preview-head{display:flex;align-items:center;gap:8px}
-    .iframe-wrap{flex:1;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.06)}
-    iframe#preview{width:100%;height:420px;border:0;display:block}
+    /* Top tabs */
+    .tabs{display:flex;gap:8px;margin-bottom:10px}
+    .tab{padding:8px 12px;border-radius:10px;background:linear-gradient(180deg,#ffffff,#f7fbff);border:1px solid rgba(7,55,95,0.04);cursor:pointer;font-family:var(--mono)}
+    .tab.active{background:linear-gradient(180deg,var(--sky),var(--sky-600));color:white;box-shadow:0 6px 18px rgba(63,169,255,0.12)}
 
-    .meta{display:flex;gap:8px;align-items:center}
+    /* Editor */
+    .editor-wrapper{display:flex;flex-direction:column;gap:8px}
+    .toolbar{display:flex;align-items:center;gap:8px}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;background:transparent;font-weight:600}
+    .btn.primary{background:var(--sky);color:white;box-shadow:0 6px 18px rgba(63,169,255,0.12)}
+    .controls{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .editor{display:flex;height:calc(100vh - 180px);overflow:hidden;border-radius:10px;border:1px solid rgba(7,55,95,0.04)}
+    .pane{flex:1;display:flex;flex-direction:column;min-width:0}
+    .code-area{display:flex;flex:1;overflow:auto;background:#0b1220;color:#e6eef8}
+    .linenums{background:#071328;color:#9fb6d8;padding:14px 8px;font-family:var(--mono);min-width:56px;text-align:right}
+    textarea.code{flex:1;outline:none;border:0;padding:14px 16px;font-size:13.5px;line-height:1.5;background:transparent;color:inherit;font-family:var(--mono);resize:none}
 
-    @media (max-width:1100px){ .editor-layout{grid-template-columns:1fr 360px} .panes{grid-template-columns:1fr} iframe#preview{height:300px} }
-    @media (max-width:700px){ .editor-layout{grid-template-columns:1fr} iframe#preview{height:280px} }
+    /* Preview */
+    .preview-header{display:flex;align-items:center;gap:10px;padding-bottom:8px}
+    .iframe-wrap{flex:1;border-radius:8px;overflow:hidden;border:1px solid rgba(7,55,95,0.04)}
+    iframe.preview{width:100%;height:100%;border:0;background:white}
 
-    /* small editor placeholders (ace will replace body) */
-    .editor-placeholder{width:100%;height:100%;}
+    /* Footer small helpers */
+    .meta{font-size:12px;color:var(--muted)}
 
-    /* focus */
-    button:focus, input:focus, select:focus{outline:3px solid rgba(0,188,212,0.14)}
+    /* Responsive */
+    @media (max-width:1100px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr 420px;height:100vh}.sidebar{order:3}.editor{height:380px}}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="logo">Ti</div>
-      <div>
-        <h1>Code Editor</h1>
-        <p class="lead">Live HTML/CSS/JS editing with sandboxed preview. Sky-blue themed, responsive and professional.</p>
-      </div>
-    </header>
-
-    <div class="card">
-      <div class="toolbar">
-        <button id="runBtn" class="btn primary"><i class="fa-solid fa-play"></i> Run</button>
-        <button id="formatBtn" class="btn ghost"><i class="fa-solid fa-brush"></i> Format</button>
-        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download ZIP</button>
-        <div class="spacer"></div>
-        <label class="small">Auto-run <input type="checkbox" id="autorun" checked></label>
-        <button id="resetBtn" class="btn ghost">Reset</button>
-      </div>
-
-      <div class="editor-layout">
+  <div class="app">
+    <div class="card sidebar">
+      <div class="brand">
+        <div class="logo">CB</div>
         <div>
-          <div class="panes">
-            <div class="pane" id="htmlPane">
-              <div class="head"><div class="title">HTML</div></div>
-              <div class="body"><div id="htmlEditor" class="editor-placeholder"></div></div>
-            </div>
+          <h1>SkyBlue Code</h1>
+          <div class="small">Clean, lightweight in-browser editor</div>
+        </div>
+      </div>
 
-            <div class="pane" id="cssPane">
-              <div class="head"><div class="title">CSS</div></div>
-              <div class="body"><div id="cssEditor" class="editor-placeholder"></div></div>
-            </div>
-
-            <div class="pane" id="jsPane">
-              <div class="head"><div class="title">JavaScript</div></div>
-              <div class="body"><div id="jsEditor" class="editor-placeholder"></div></div>
-            </div>
+      <div class="files">
+        <div class="file-item" data-file="index.html">
+          <div>
+            <div class="file-name">index.html</div>
+            <div class="small">HTML entry</div>
           </div>
+          <div class="small">html</div>
+        </div>
+        <div class="file-item" data-file="styles.css">
+          <div>
+            <div class="file-name">styles.css</div>
+            <div class="small">Project stylesheet</div>
+          </div>
+          <div class="small">css</div>
+        </div>
+        <div class="file-item" data-file="script.js">
+          <div>
+            <div class="file-name">script.js</div>
+            <div class="small">Behavior</div>
+          </div>
+          <div class="small">js</div>
+        </div>
+      </div>
 
-          <div style="padding:10px;display:flex;gap:8px;align-items:center">
-            <input id="titleInput" placeholder="Project title (optional)" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
-            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy HTML</button>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+        <div class="meta">Tips: Press <strong>Ctrl/Cmd + Enter</strong> to run. <strong>Tab</strong> inserts 2 spaces.</div>
+        <div class="small">Export: download a file from the top toolbar</div>
+      </div>
+    </div>
+
+    <div class="card editor-wrapper">
+      <div class="tabs" id="tabs"></div>
+
+      <div class="toolbar">
+        <button id="runBtn" class="btn primary">Run ▶</button>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="autorun"> Auto-run</label>
+        <div class="controls">
+          <label class="small">Font</label>
+          <input id="fontSize" type="range" min="12" max="20" value="14">
+          <button id="wrapBtn" class="btn">Toggle Wrap</button>
+          <button id="downloadBtn" class="btn">Download</button>
+        </div>
+      </div>
+
+      <div class="editor">
+        <div class="pane" style="width:50%">
+          <div style="padding:8px 12px;font-weight:600">Editor</div>
+          <div class="code-area">
+            <div class="linenums" id="linenums">1</div>
+            <textarea id="code" class="code" spellcheck="false"></textarea>
           </div>
         </div>
-
-        <div class="preview-wrap">
-          <div class="preview-head">
-            <div class="meta"><strong>Preview</strong></div>
-            <div style="flex:1"></div>
-            <button id="openNewBtn" class="btn ghost">Open in new tab</button>
+        <div class="pane" style="width:50%">
+          <div class="preview-header">
+            <div style="font-weight:600">Live Preview</div>
+            <div class="small">(sandboxed iframe)</div>
           </div>
-          <div class="iframe-wrap"><iframe id="preview" sandbox="allow-scripts allow-forms allow-same-origin"></iframe></div>
-          <div style="padding:10px;display:flex;gap:8px;align-items:center">
-            <div class="small">Live errors:</div><div id="errorMsg" class="small" style="color:#c62828"></div>
+          <div class="iframe-wrap" style="flex:1">
+            <iframe id="preview" class="preview" sandbox="allow-scripts allow-modals allow-forms"></iframe>
           </div>
         </div>
+      </div>
+
+    </div>
+
+    <div class="card" style="min-width:300px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-weight:700">Files</div>
+        <div class="small">Theme: <span style="color:var(--sky)">Sky Blue</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;height:100%">
+        <div style="padding:8px;border-radius:8px;background:linear-gradient(180deg,#fbfeff,#f3fbff);min-height:120px">
+          <div style="font-weight:600;margin-bottom:6px">Current file</div>
+          <div id="currentFile" class="small">index.html</div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button id="copyBtn" class="btn">Copy</button>
+          <button id="resetBtn" class="btn">Reset</button>
+          <button id="downloadAll" class="btn">Download All (.zip)</button>
+        </div>
+
+        <div style="margin-top:auto;font-size:12px;color:var(--muted)">Built for demos — drop files into the editor, edit, and preview instantly.</div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" integrity="" crossorigin="anonymous"></script>
-  <script>
-    // Basic template
-    const template = {
-      html: `<!-- HTML: Add your markup here -->\n<div class=\"container\">\n  <h1>Hello from Tool i online — Code Editor</h1>\n  <p>Edit HTML, CSS, and JS — then click Run (or auto-run).</p>\n</div>`,
-      css: `/* CSS: style your page */\nbody{font-family:Inter, system-ui, -apple-system, sans-serif;padding:30px;background:linear-gradient(180deg,#f0fdff,#e6fbff);} .container{max-width:900px;margin:0 auto} h1{color:var(--sky-dark);} p{color:#334;}`.replace(/var\(--sky-dark\)/g, '#0aa3b0'),
-      js: `// JavaScript: interact with DOM\nconsole.log('Code Editor ready');`
-    };
+<script>
+// --- Starter project files ---
+const starter = {
+  'index.html': `<!doctype html>\n<html>\n  <head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n    <title>SkyBlue Demo</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n  </head>\n  <body>\n    <main>\n      <h1>Hello from SkyBlue Editor</h1>\n      <button id=\"btn\">Click me</button>\n    </main>\n    <script src=\"script.js\"></script>\n  </body>\n</html>`,
+  'styles.css': `body{font-family:Inter,system-ui,Arial;margin:36px;background:linear-gradient(180deg,#f7fbff,#eef8ff);color:#012a4a}h1{color:var(--sky, #3fa9ff)}button{padding:10px 14px;border-radius:8px;border:0;background:var(--sky, #3fa9ff);color:white}`,
+  'script.js': `document.getElementById('btn')?.addEventListener('click', ()=> alert('Button clicked from script.js'))`
+};
 
-    // init ace editors
-    const htmlEditor = ace.edit('htmlEditor'); htmlEditor.session.setMode('ace/mode/html'); htmlEditor.setTheme('ace/theme/chrome'); htmlEditor.session.setValue(template.html); htmlEditor.setOptions({fontSize:14,wrap:true});
-    const cssEditor = ace.edit('cssEditor'); cssEditor.session.setMode('ace/mode/css'); cssEditor.setTheme('ace/theme/chrome'); cssEditor.session.setValue(template.css); cssEditor.setOptions({fontSize:14,wrap:true});
-    const jsEditor = ace.edit('jsEditor'); jsEditor.session.setMode('ace/mode/javascript'); jsEditor.setTheme('ace/theme/chrome'); jsEditor.session.setValue(template.js); jsEditor.setOptions({fontSize:14,wrap:true});
+let files = Object.assign({}, starter);
+let current = 'index.html';
+const codeEl = document.getElementById('code');
+const linenums = document.getElementById('linenums');
+const preview = document.getElementById('preview');
+const tabsEl = document.getElementById('tabs');
+const currentFileEl = document.getElementById('currentFile');
 
-    const previewFrame = document.getElementById('preview');
-    const runBtn = document.getElementById('runBtn');
-    const autorun = document.getElementById('autorun');
-    const copyBtn = document.getElementById('copyBtn');
-    const openNewBtn = document.getElementById('openNewBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const formatBtn = document.getElementById('formatBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const titleInput = document.getElementById('titleInput');
-    const errorMsg = document.getElementById('errorMsg');
+function buildTabs(){
+  tabsEl.innerHTML = '';
+  Object.keys(files).forEach((name, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (name===current? ' active':'');
+    btn.textContent = name;
+    btn.onclick = ()=>{switchFile(name)};
+    tabsEl.appendChild(btn);
+  })
+}
 
-    function buildPreview(){
-      const html = htmlEditor.getValue();
-      const css = cssEditor.getValue();
-      const js = jsEditor.getValue();
-      const full = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>${escapeHtml(titleInput.value||'Preview')}</title><style>${css}</style></head><body>${html}<script>try{\n${js}\n}catch(e){parent.postMessage({type:'preview-error', message: e.message}, '*');}</script></body></html>`;
-      return full;
-    }
+function switchFile(name){
+  saveCurrent();
+  current = name;
+  codeEl.value = files[current];
+  currentFileEl.textContent = current;
+  buildTabs();
+  updateLineNumbers();
+}
 
-    function renderPreview(){
-      errorMsg.textContent = '';
-      const doc = buildPreview();
-      const blob = new Blob([doc], {type: 'text/html'});
-      const url = URL.createObjectURL(blob);
-      previewFrame.src = url;
-      // revoke previous after load to free memory — keep a small delay
-      setTimeout(()=> URL.revokeObjectURL(url), 1000);
-    }
+function saveCurrent(){
+  if(current) files[current] = codeEl.value;
+}
 
-    // listen to messages from preview (errors)
-    window.addEventListener('message', (ev)=>{
-      try{ if(ev.data && ev.data.type === 'preview-error'){ errorMsg.textContent = ev.data.message; } }catch(e){}
-    });
+function updateLineNumbers(){
+  const lines = codeEl.value.split('\n').length;
+  let s = '';
+  for(let i=1;i<=lines;i++) s += i + '\n';
+  linenums.textContent = s;
+}
 
-    runBtn.addEventListener('click', ()=> renderPreview());
-    openNewBtn.addEventListener('click', ()=>{ const doc = buildPreview(); const w = window.open(); w.document.open(); w.document.write(doc); w.document.close(); });
+function runPreview(){
+  saveCurrent();
+  // Create a blob URL for styles and script, and inject into html
+  const css = files['styles.css'] || '';
+  const js = files['script.js'] || '';
+  let html = files['index.html'] || '';
 
-    copyBtn.addEventListener('click', ()=>{ const doc = buildPreview(); navigator.clipboard.writeText(doc).then(()=>{ copyBtn.textContent = 'Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy HTML',1000); }); });
+  // Inject styles and scripts by replacing link/script tags if present, otherwise append
+  // We'll create data URLs to avoid cross-origin issues
+  const styleBlob = new Blob([css], {type:'text/css'});
+  const styleURL = URL.createObjectURL(styleBlob);
+  const scriptBlob = new Blob([js], {type:'text/javascript'});
+  const scriptURL = URL.createObjectURL(scriptBlob);
 
-    downloadBtn.addEventListener('click', ()=>{
-      // make a zip-like single html download
-      const doc = buildPreview(); const blob = new Blob([doc], {type:'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (titleInput.value || 'project') + '.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-    });
+  // Replace common href/src occurrences (best-effort)
+  html = html.replace(/<link[^>]*href=["'].*styles\.css["'][^>]*>/i, `<link rel=\"stylesheet\" href=\"${styleURL}\">`);
+  html = html.replace(/<script[^>]*src=["'].*script\.js["'][^>]*>\s*<\/script>/i, `<script src=\"${scriptURL}\"></script>`);
 
-    // format: simple pretty by inserting indentation for HTML/CSS/JS using built-in basic formatting (not a full prettier)
-    formatBtn.addEventListener('click', ()=>{
-      // naive formatting: trim lines and replace multiple blank lines
-      [htmlEditor, cssEditor, jsEditor].forEach(ed=>{
-        const v = ed.getValue().split('\n').map(l=> l.replace(/\t/g,'    ').replace(/\s+$/,'')).join('\n').replace(/\n{3,}/g,'\n\n');
-        ed.setValue(v, -1);
-      });
-    });
+  // If index.html did not link them, append at end
+  if(!/styles\.css/i.test(Object.keys(files).join(' ')) || !/styles\.css/i.test(html)){
+    html = html.replace(/<\/head>/i, `<link rel=\"stylesheet\" href=\"${styleURL}\">\n</head>`);
+  }
+  if(!/script\.js/i.test(html)){
+    html = html.replace(/<\/body>/i, `<script src=\"${scriptURL}\"></script>\n</body>`);
+  }
 
-    resetBtn.addEventListener('click', ()=>{
-      if(!confirm('Reset editors to template?')) return; htmlEditor.setValue(template.html, -1); cssEditor.setValue(template.css, -1); jsEditor.setValue(template.js, -1); renderPreview();
-    });
+  preview.srcdoc = html;
+}
 
-    // autorun
-    let autorunTimer = null;
-    [htmlEditor, cssEditor, jsEditor].forEach(ed=> ed.session.on('change', ()=>{ if(autorun.checked){ clearTimeout(autorunTimer); autorunTimer = setTimeout(renderPreview, 600); } }));
+// Editor behaviors
+codeEl.addEventListener('input', ()=>{ updateLineNumbers(); if(document.getElementById('autorun').checked) runPreview(); });
+codeEl.addEventListener('scroll', ()=>{ linenums.scrollTop = codeEl.scrollTop; });
+codeEl.addEventListener('keydown', (e)=>{
+  if(e.key === 'Tab'){ e.preventDefault(); const start = codeEl.selectionStart; const end = codeEl.selectionEnd; const value = codeEl.value; codeEl.value = value.substring(0, start) + '  ' + value.substring(end); codeEl.selectionStart = codeEl.selectionEnd = start + 2; updateLineNumbers(); }
+  if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ e.preventDefault(); runPreview(); }
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); downloadCurrent(); }
+});
 
-    // simple persistence
-    const STORAGE = 'ti_code_editor_v1';
-    function saveState(){ const state = {html: htmlEditor.getValue(), css: cssEditor.getValue(), js: jsEditor.getValue(), title: titleInput.value}; localStorage.setItem(STORAGE, JSON.stringify(state)); }
-    function loadState(){ try{ const s = JSON.parse(localStorage.getItem(STORAGE) || '{}'); if(s.html) htmlEditor.setValue(s.html, -1); if(s.css) cssEditor.setValue(s.css, -1); if(s.js) jsEditor.setValue(s.js, -1); if(s.title) titleInput.value = s.title; }catch(e){} }
-    setInterval(saveState, 3000);
-    loadState(); renderPreview();
+// Buttons
+document.getElementById('runBtn').addEventListener('click', runPreview);
+document.getElementById('autorun').addEventListener('change', ()=>{/* no-op */});
+document.getElementById('fontSize').addEventListener('input', (e)=>{ codeEl.style.fontSize = e.target.value + 'px'; updateLineNumbers(); });
+document.getElementById('wrapBtn').addEventListener('click', ()=>{ codeEl.style.whiteSpace = codeEl.style.whiteSpace === 'pre' ? 'pre-wrap' : 'pre'; });
 
-    // small helper
-    function escapeHtml(s){ return s.replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+function downloadCurrent(){
+  saveCurrent();
+  const name = current;
+  const blob = new Blob([files[name]], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+}
 
-    // keyboard: Ctrl/Cmd+Enter run
-    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ e.preventDefault(); renderPreview(); } });
+function downloadAllZip(){
+  saveCurrent();
+  // Create a simple zip using JSZip if available, otherwise create a folder-like download by zipping manually is complex.
+  // Fallback: create a single html that contains embedded css and js assembled.
+  const assembled = assembleSingleHTML();
+  const blob = new Blob([assembled], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'project.html';
+  a.click();
+}
 
-    // post message for runtime errors: inside preview, script catches and posts to parent. For user scripts using console.error etc, not intercepted.
-  </script>
+function assembleSingleHTML(){
+  const css = files['styles.css'] || '';
+  const js = files['script.js'] || '';
+  let html = files['index.html'] || '';
+  // strip existing external links to styles.css and script.js
+  html = html.replace(/<link[^>]*href=["'].*styles\.css["'][^>]*>/i, '');
+  html = html.replace(/<script[^>]*src=["'].*script\.js["'][^>]*>\s*<\/script>/i, '');
+  // inject
+  html = html.replace(/<\/head>/i, `<style>\n${css}\n</style>\n</head>`);
+  html = html.replace(/<\/body>/i, `<script>\n${js}\n</script>\n</body>`);
+  return html;
+}
+
+document.getElementById('downloadBtn').addEventListener('click', downloadCurrent);
+document.getElementById('copyBtn').addEventListener('click', ()=>{ navigator.clipboard.writeText(codeEl.value).then(()=> alert('Copied to clipboard')); });
+document.getElementById('resetBtn').addEventListener('click', ()=>{ if(confirm('Reset project to starter files?')){ files = Object.assign({}, starter); switchFile('index.html'); runPreview(); }});
+document.getElementById('downloadAll').addEventListener('click', downloadAllZip);
+
+// init files list clickable items
+document.querySelectorAll('.file-item').forEach(el=>{
+  el.addEventListener('click', ()=>{ switchFile(el.dataset.file); });
+});
+
+// Initialize
+buildTabs();
+switchFile(current);
+runPreview();
+updateLineNumbers();
+
+// Accessibility: simple autosave to localStorage
+window.addEventListener('beforeunload', ()=>{ try{ localStorage.setItem('skyblue_files', JSON.stringify(files)); localStorage.setItem('skyblue_current', current);}catch(e){} });
+(function loadFromStorage(){ try{ const saved = JSON.parse(localStorage.getItem('skyblue_files')||'null'); const c = localStorage.getItem('skyblue_current'); if(saved){ files = Object.assign({}, starter, saved); if(c && files[c]) current = c; } }catch(e){} })();
+
+</script>
 </body>
 </html>
