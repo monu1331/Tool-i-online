@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Word & Character Counter — Tool i online</title>
+  <meta name="description" content="Fast word, character & readability stats. Light-green themed, responsive and professional." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --green:#8bc34a; --green-700:#7cb342; --bg:#f8fff4; --card:#ffffff; --muted:#2b3b2b; --radius:12px; --shadow:0 10px 30px rgba(60,100,50,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:var(--muted);-webkit-font-smoothing:antialiased}
+    .wrap{max-width:1200px;margin:20px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--green),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:rgba(43,59,43,0.8);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 360px;gap:14px;padding:16px}
+    textarea{width:100%;min-height:260px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem;resize:vertical}
+    input,select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);font-size:0.95rem}
+
+    .stats{display:flex;gap:12px;flex-wrap:wrap}
+    .stat{background:linear-gradient(180deg,#fff,#fbfff2);padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);min-width:120px;text-align:center}
+    .stat strong{display:block;font-size:1.25rem}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    .history{max-height:36vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    .footer-note{padding:12px;color:rgba(43,59,43,0.7);font-size:0.9rem}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:180px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,textarea:focus,input:focus{outline:3px solid rgba(139,195,74,0.14)}
+
+    .copy-small{font-size:0.85rem;color:rgba(43,59,43,0.6)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Word & Character Counter</h1>
+        <p class="lead">Quick counts, reading time, estimated speaking time and readability stats. Light-green themed and mobile-friendly.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <button id="analyzeBtn" class="btn primary"><i class="fa-solid fa-chart-simple"></i> Analyze</button>
+        <button id="clearBtn" class="btn ghost">Clear</button>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+        <div class="spacer"></div>
+        <input type="file" id="fileInput" accept=".txt,.md,.docx" style="width:220px">
+      </div>
+
+      <div class="layout">
+        <section>
+          <label class="small">Paste or type text</label>
+          <textarea id="textInput" placeholder="Paste article, essay or any text here..."></textarea>
+
+          <div class="controls">
+            <label class="small"><input type="checkbox" id="ignorePunct"> Ignore punctuation</label>
+            <label class="small"><input type="checkbox" id="ignoreStopwords" checked> Ignore common stopwords</label>
+            <label class="small">Language <select id="langSelect"><option value="en">English</option><option value="hi">Hindi</option><option value="auto">Auto</option></select></label>
+            <div style="flex:1"></div>
+            <button id="saveBtn" class="btn ghost">Save</button>
+          </div>
+
+          <div style="margin-top:12px" class="small">Tip: You can upload a .txt or .md file or paste directly. Everything runs in your browser — nothing is uploaded.</div>
+        </section>
+
+        <aside>
+          <div style="padding-bottom:8px">
+            <div class="small">Summary</div>
+            <div class="stats" style="margin-top:8px">
+              <div class="stat"><span class="small">Words</span><strong id="wordCount">0</strong></div>
+              <div class="stat"><span class="small">Characters</span><strong id="charCount">0</strong></div>
+              <div class="stat"><span class="small">Sentences</span><strong id="sentenceCount">0</strong></div>
+              <div class="stat"><span class="small">Paragraphs</span><strong id="paraCount">0</strong></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Reading & Speaking time</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <div class="stat"><span class="small">Read (avg 200 wpm)</span><strong id="readTime">0m</strong></div>
+              <div class="stat"><span class="small">Speak (avg 130 wpm)</span><strong id="speakTime">0m</strong></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Top words</div>
+            <div id="topWords" style="margin-top:8px"></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved analyses</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="exportBtn" class="btn ghost">Export CSV</button>
+              <button id="clearHistory" class="btn ghost">Clear</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="footer-note">All processing is client-side. Saved analyses are stored in your browser only.</div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const textInput = document.getElementById('textInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const fileInput = document.getElementById('fileInput');
+    const ignorePunct = document.getElementById('ignorePunct');
+    const ignoreStopwords = document.getElementById('ignoreStopwords');
+    const langSelect = document.getElementById('langSelect');
+
+    const wordCountEl = document.getElementById('wordCount');
+    const charCountEl = document.getElementById('charCount');
+    const sentenceCountEl = document.getElementById('sentenceCount');
+    const paraCountEl = document.getElementById('paraCount');
+    const readTimeEl = document.getElementById('readTime');
+    const speakTimeEl = document.getElementById('speakTime');
+    const topWordsEl = document.getElementById('topWords');
+
+    const saveBtn = document.getElementById('saveBtn');
+    const historyList = document.getElementById('historyList');
+    const clearHistory = document.getElementById('clearHistory');
+    const exportBtn = document.getElementById('exportBtn');
+
+    const STORAGE = 'ti_wordcounter_history_v1';
+
+    const stopwords_en = new Set(['the','is','in','and','to','a','of','that','it','on','for','with','as','are','this','was','but','be','by','or','an','from','at','which','you','have','has','not','I','we']);
+    const stopwords_hi = new Set(['और','है','में','को','के','का','से','पर','यह','जो','वह','था','थे','हैं','कर','यहाँ']);
+
+    function readFileAsText(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsText(file); }); }
+
+    fileInput.addEventListener('change', async ()=>{
+      const f = fileInput.files[0]; if(!f) return; try{ const text = await readFileAsText(f); textInput.value = text; analyze(); }catch(e){ alert('Could not read file: '+e.message); } finally{ fileInput.value=''; }
+    });
+
+    function normalize(text){ return text.replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim(); }
+
+    function splitWords(text){ // unicode-aware simple word splitter
+      return text.match(/\p{L}[\p{L}0-9'’\-]*/gu) || [];
+    }
+
+    function analyze(){
+      const raw = textInput.value || '';
+      const text = normalize(raw);
+      const chars = raw.length;
+
+      // paragraphs: split by double newline
+      const paras = raw.split(/\n{2,}/).filter(p=>p.trim().length>0);
+      const paraCount = paras.length;
+
+      // sentences (simple heuristic)
+      const sentences = raw.split(/[.!?]+\s*/).filter(s=>s.trim().length>0);
+      const sentenceCount = sentences.length;
+
+      // words
+      let words = splitWords(text);
+      let filteredWords = words.map(w=>w);
+      const lang = langSelect.value;
+      const stopset = (lang === 'hi') ? stopwords_hi : stopwords_en;
+
+      if(ignorePunct.checked){ filteredWords = filteredWords.map(w => w.replace(/^[^\p{L}0-9]+|[^\p{L}0-9]+$/gu, '')).filter(Boolean); }
+      if(ignoreStopwords.checked){ filteredWords = filteredWords.filter(w => { const key = langSelect.value === 'hi' ? w.toLowerCase() : w.toLowerCase(); return !stopset.has(key); }); }
+
+      const wordCount = filteredWords.length;
+
+      // frequency
+      const freq = new Map();
+      filteredWords.forEach(w=>{ const k = w.toLowerCase(); freq.set(k, (freq.get(k)||0)+1); });
+      const freqArr = Array.from(freq.entries()).sort((a,b)=> b[1]-a[1]).slice(0,10);
+
+      // times
+      const readMinutes = Math.max(1, Math.round(wordCount / 200)); // 200 wpm
+      const speakMinutes = Math.max(1, Math.round(wordCount / 130));
+
+      // update UI
+      wordCountEl.textContent = wordCount;
+      charCountEl.textContent = chars;
+      sentenceCountEl.textContent = sentenceCount;
+      paraCountEl.textContent = paraCount;
+      readTimeEl.textContent = `${readMinutes}m`;
+      speakTimeEl.textContent = `${speakMinutes}m`;
+
+      // top words
+      topWordsEl.innerHTML = '';
+      if(freqArr.length===0) topWordsEl.innerHTML = '<div class="small">No words found</div>';
+      freqArr.forEach(([w,c])=>{
+        const el = document.createElement('div'); el.className='history-item'; el.style.display='flex'; el.style.alignItems='center'; el.style.justifyContent='space-between'; el.innerHTML = `<div><strong>${escapeHtml(w)}</strong> <span class="copy-small">· ${c}</span></div>`; el.addEventListener('click', ()=> highlightWord(w)); topWordsEl.appendChild(el);
+      });
+
+      // store last analysis to allow export
+      window.__last = {text: raw, wordCount, charCount: chars, sentenceCount, paraCount, freq: freqArr};
+    }
+
+    function highlightWord(word){ if(!word) return; const re = new RegExp(`\\b(${escapeRegExp(word)})\\b`, 'gi'); const html = escapeHtml(textInput.value).replace(re, '<span style="background:linear-gradient(90deg,#f0fff0,#e6f9d9);padding:2px;border-radius:4px">$1</span>'); const w = window.open('', '_blank'); w.document.write(`<pre style="white-space:pre-wrap;font-family:Inter,Arial;padding:16px">${html}</pre>`); }
+
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
+    function escapeHtml(s){ return (s||'').toString().replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;",'`':'&#96;'}[m]; }); }
+
+    analyzeBtn.addEventListener('click', analyze);
+    textInput.addEventListener('input', ()=>{ /* no auto-analyze by default */ });
+
+    clearBtn.addEventListener('click', ()=>{ if(confirm('Clear text and results?')){ textInput.value=''; wordCountEl.textContent='0'; charCountEl.textContent='0'; sentenceCountEl.textContent='0'; paraCountEl.textContent='0'; readTimeEl.textContent='0m'; speakTimeEl.textContent='0m'; topWordsEl.innerHTML=''; window.__last = null; } });
+
+    copyBtn.addEventListener('click', async ()=>{ try{ const txt = textInput.value || ''; await navigator.clipboard.writeText(txt); alert('Text copied to clipboard'); }catch(e){ alert('Copy failed'); } });
+
+    saveBtn.addEventListener('click', ()=>{ const last = window.__last; if(!last) return alert('Run analysis first'); const arr = JSON.parse(localStorage.getItem(STORAGE) || '[]'); arr.unshift({ts:Date.now(), words: last.wordCount, chars: last.charCount, sample: last.text.slice(0,200)}); if(arr.length>50) arr.pop(); localStorage.setItem(STORAGE, JSON.stringify(arr)); renderHistory(); alert('Saved analysis'); });
+
+    function renderHistory(){ const arr = JSON.parse(localStorage.getItem(STORAGE) || '[]'); historyList.innerHTML=''; if(!arr.length){ historyList.innerHTML='<div class="small">No saved analyses</div>'; return; } arr.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${new Date(it.ts).toLocaleString()}</div><div class="small">Words: ${it.words} · Chars: ${it.chars}</div><div class="small">${escapeHtml(it.sample)}</div>`; el.addEventListener('click', ()=>{ if(confirm('Load this sample into editor?')){ textInput.value = it.sample; analyze(); } }); historyList.appendChild(el); }); }
+
+    clearHistory.addEventListener('click', ()=>{ if(confirm('Clear saved analyses?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+
+    exportBtn.addEventListener('click', ()=>{ const last = window.__last; if(!last) return alert('Run analysis first'); // export frequency as CSV
+      const rows = [['word','count']].concat(last.freq.map(([w,c])=>[w,c])); const csv = rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='word-frequency.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    });
+
+    // init
+    (function init(){ renderHistory(); })();
+  </script>
+</body>
+</html>
