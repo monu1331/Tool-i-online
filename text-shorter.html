@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Text Shortener — Tool i online</title>
+  <meta name="description" content="Shorten or summarize text using extractive methods (first sentences, ratio, max characters) — responsive yellow-themed UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --yellow:#FFB300; --yellow-700:#d18f00; --bg:#fff9f0; --muted:#6b6b6b; --card:#ffffff; --radius:12px; --shadow:0 12px 30px rgba(0,0,0,0.06); --maxw:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#111}
+    .wrap{max-width:var(--maxw);margin:20px auto;padding:18px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo-mark{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,var(--yellow),var(--yellow-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:18px}
+
+    .panel{padding:16px}
+    label{display:block;font-size:0.95rem;color:var(--muted);margin-bottom:8px}
+    textarea{width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:1rem;resize:vertical}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--yellow);color:#111}
+    .btn.ghost{background:#fff}
+
+    .option{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .option .row{display:flex;gap:8px;align-items:center}
+    .small{font-size:0.9rem;color:var(--muted)}
+
+    .preview{padding:12px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);min-height:140px;background:linear-gradient(180deg,#fff,#fffcf5);white-space:pre-wrap}
+
+    .history{max-height:48vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .logo-mark{width:44px;height:44px} textarea{min-height:180px} }
+    @media (max-width:480px){ h1{font-size:1rem} }
+
+    :focus{outline:3px solid rgba(255,179,0,0.18)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo-mark">Ti</div>
+      <div>
+        <h1>Text Shortener</h1>
+        <p class="lead">Quickly shorten or summarize long text. Choose method: first sentences, ratio-based, character limit or custom keywords. All processing is local to your browser.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section class="panel">
+          <label for="inputText">Input text</label>
+          <textarea id="inputText" placeholder="Paste or type long text here..."></textarea>
+
+          <div class="option">
+            <div class="row">
+              <label class="small" style="width:140px">Method</label>
+              <select id="method">
+                <option value="firstSentences">First sentences</option>
+                <option value="ratio">Ratio (percentage)</option>
+                <option value="maxChars">Max characters</option>
+                <option value="keyword">Keep keywords (extractive)</option>
+              </select>
+            </div>
+
+            <div class="row" id="paramRow">
+              <label class="small" style="width:140px">Parameter</label>
+              <input id="param" type="number" min="1" value="3" style="width:120px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)">
+              <div class="small" style="color:var(--muted);margin-left:8px" id="paramHelp">Sentences</div>
+            </div>
+
+            <div class="row">
+              <label class="small" style="width:140px">Improve</label>
+              <label><input type="checkbox" id="preserveKeywords" checked> Preserve keywords</label>
+            </div>
+
+            <div class="row">
+              <label class="small" style="width:140px">Options</label>
+              <label><input type="checkbox" id="trim"> Trim whitespace</label>
+              <label><input type="checkbox" id="keepParagraphs" checked> Keep paragraph breaks</label>
+            </div>
+          </div>
+
+          <div class="controls">
+            <button id="shortenBtn" class="btn primary"><i class="fa-solid fa-compress"></i> Shorten</button>
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+            <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+            <div style="flex:1"></div>
+            <button id="saveBtn" class="btn ghost"><i class="fa-solid fa-save"></i> Save</button>
+          </div>
+
+        </section>
+
+        <aside class="panel">
+          <h3 style="margin-top:0">Result</h3>
+          <div class="preview" id="preview">No output yet — click Shorten</div>
+
+          <div style="margin-top:12px">
+            <div class="small">Summary</div>
+            <div class="small">Original length: <strong id="origLen">0</strong> chars</div>
+            <div class="small">Shortened length: <strong id="shortLen">0</strong> chars</div>
+            <div class="small">Reduction: <strong id="reduction">0%</strong></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history</div>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="clearHistory" class="btn ghost">Clear history</button>
+              <button id="exportHistory" class="btn ghost">Export</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const inputText = document.getElementById('inputText');
+    const methodEl = document.getElementById('method');
+    const paramEl = document.getElementById('param');
+    const paramHelp = document.getElementById('paramHelp');
+    const preserveKeywordsEl = document.getElementById('preserveKeywords');
+    const trimEl = document.getElementById('trim');
+    const keepParagraphsEl = document.getElementById('keepParagraphs');
+
+    const shortenBtn = document.getElementById('shortenBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const preview = document.getElementById('preview');
+    const origLenEl = document.getElementById('origLen');
+    const shortLenEl = document.getElementById('shortLen');
+    const reductionEl = document.getElementById('reduction');
+
+    const historyList = document.getElementById('historyList');
+    const clearHistoryBtn = document.getElementById('clearHistory');
+    const exportHistoryBtn = document.getElementById('exportHistory');
+    const STORAGE = 'ti_text_shortener_v1';
+
+    // helpers: simple sentence splitter (naive)
+    function splitSentences(text){
+      // keep punctuation, split on ., !, ? followed by space/newline
+      const parts = text.match(/[^.!?\n]+[.!?\n]?/g);
+      return parts ? parts.map(s => s.trim()).filter(Boolean) : [text];
+    }
+
+    function extractiveByFirstSentences(text, n){ const s = splitSentences(text); return s.slice(0, n).join(' '); }
+
+    function extractiveByRatio(text, ratio){ const sentences = splitSentences(text); const keep = Math.max(1, Math.round(sentences.length * Math.max(0.05, Math.min(1, ratio)))); return sentences.slice(0, keep).join(' '); }
+
+    function byMaxChars(text, maxChars){ if(text.length <= maxChars) return text; // try to cut at sentence boundary
+      const sentences = splitSentences(text); let out = ''; for(const s of sentences){ if(out.length + s.length <= maxChars) out += (out? ' ' : '') + s; else break; } if(out) return out.slice(0, maxChars); return text.slice(0, maxChars); }
+
+    // naive keyword extractor: top N words by frequency excluding stopwords
+    const STOP = new Set(['the','and','a','an','in','on','at','to','of','for','with','is','are','was','were','be','by','this','that','it','from']);
+    function extractKeywords(text, k=5){ const words = (text.toLowerCase().match(/\b[\p{L}0-9']+\b/gu) || []); const freq = {}; words.forEach(w=>{ if(STOP.has(w)) return; freq[w] = (freq[w]||0)+1; }); const arr = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,k).map(x=>x[0]); return arr; }
+
+    function extractiveByKeywords(text, keywords){ // find sentences that contain keywords (keep order)
+      const sentences = splitSentences(text);
+      const sel = sentences.filter(s => keywords.some(k=> new RegExp('\\b'+escapeRegExp(k)+'\\b','i').test(s)));
+      if(sel.length) return sel.join(' ');
+      // fallback to first sentences
+      return sentences.slice(0,3).join(' ');
+    }
+
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
+
+    function shorten(){
+      let text = inputText.value || '';
+      origLenEl.textContent = text.length;
+      if(trimEl.checked) text = text.trim().replace(/\n{3,}/g,'\n\n');
+      if(!text){ preview.textContent = 'No input'; shortLenEl.textContent = 0; reductionEl.textContent = '0%'; return; }
+
+      const method = methodEl.value;
+      const param = Number(paramEl.value) || 1;
+      let out = '';
+
+      if(method === 'firstSentences'){
+        out = extractiveByFirstSentences(text, Math.max(1, param));
+      } else if(method === 'ratio'){
+        const ratio = Math.max(0.05, Math.min(1, param / 100));
+        out = extractiveByRatio(text, ratio);
+      } else if(method === 'maxChars'){
+        out = byMaxChars(text, Math.max(20, param));
+      } else if(method === 'keyword'){
+        const kws = extractKeywords(text, Math.max(1,param));
+        out = extractiveByKeywords(text, kws);
+      }
+
+      if(keepParagraphsEl.checked){ /* keep paragraph breaks, already preserved */ }
+      // ensure trimmed
+      out = out.trim();
+
+      preview.textContent = out || '—';
+      shortLenEl.textContent = out.length;
+      const red = origLenEl.textContent > 0 ? Math.round((1 - (out.length / Number(origLenEl.textContent))) * 100) : 0;
+      reductionEl.textContent = red + '%';
+
+      lastOutput = out;
+      return out;
+    }
+
+    // UI wiring
+    methodEl.addEventListener('change', ()=>{
+      const m = methodEl.value;
+      if(m === 'firstSentences'){ paramEl.type='number'; paramEl.min=1; paramEl.value=3; paramHelp.textContent='Sentences'; }
+      else if(m === 'ratio'){ paramEl.type='number'; paramEl.min=5; paramEl.max=100; paramEl.value=30; paramHelp.textContent='% of sentences'; }
+      else if(m === 'maxChars'){ paramEl.type='number'; paramEl.min=20; paramEl.value=300; paramHelp.textContent='Max characters'; }
+      else if(m === 'keyword'){ paramEl.type='number'; paramEl.min=1; paramEl.value=5; paramHelp.textContent='Top keywords to consider'; }
+    });
+
+    shortenBtn.addEventListener('click', ()=>{ shorten(); });
+    clearBtn.addEventListener('click', ()=>{ if(!inputText.value) return; if(!confirm('Clear input?')) return; inputText.value=''; preview.textContent='No output yet'; origLenEl.textContent=0; shortLenEl.textContent=0; reductionEl.textContent='0%'; });
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(preview.textContent || ''); copyBtn.textContent='Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); } });
+    downloadBtn.addEventListener('click', ()=>{ const out = preview.textContent || ''; const blob = new Blob([out], {type:'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'shortened.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    // history
+    let lastOutput = '';
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML=''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${escapeHtml(it.preview)}</div><div class="small">${new Date(it.ts).toLocaleString()}</div>`; el.addEventListener('click', ()=>{ inputText.value = it.text; preview.textContent = it.text; origLenEl.textContent = it.text.length; shortLenEl.textContent = it.text.length; reductionEl.textContent='0%'; }); historyList.appendChild(el); }); }
+    saveBtn.addEventListener('click', ()=>{ const out = preview.textContent || ''; if(!out) return alert('Nothing to save'); const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift({ts:Date.now(), text: out, preview: out.slice(0,120).replace(/\n/g,' ')}); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); });
+    clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear history?')){ localStorage.removeItem(STORAGE); renderHistory(); } });
+    exportHistoryBtn.addEventListener('click', ()=>{ const raw = localStorage.getItem(STORAGE) || '[]'; const blob = new Blob([raw], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'shortener-history.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    function escapeHtml(unsafe){ return unsafe.replace(/[&<>\"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+    // init
+    (function init(){ methodEl.value='firstSentences'; methodEl.dispatchEvent(new Event('change')); renderHistory(); preview.textContent='No output yet'; })();
+
+    // keyboard: Ctrl+Enter shorten
+    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); shorten(); } });
+  </script>
+</body>
+</html>
