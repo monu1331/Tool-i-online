@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JSON Formatter & Validator — Tool i online</title>
+  <meta name="description" content="Format, validate, minify and inspect JSON. Sky-blue themed, responsive and professional UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --sky:#00bcd4; --sky-dark:#0aa3b0; --bg:#f5fcff; --card:#ffffff; --muted:#415; --radius:12px; --shadow:0 12px 30px rgba(10,120,140,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#042}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,var(--sky),var(--sky-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.15rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--sky);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 380px;gap:14px;padding:16px}
+    .pane{display:flex;flex-direction:column;gap:8px}
+    label.small{font-size:0.9rem;color:var(--muted)}
+    textarea{width:100%;min-height:300px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;font-size:0.95rem;resize:vertical}
+
+    .options{display:flex;flex-wrap:wrap;gap:8px}
+    .option{display:flex;gap:6px;align-items:center}
+
+    .result{background:linear-gradient(180deg,#fff,#f8feff);padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);min-height:120px;overflow:auto}
+
+    .meta{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .error{color:#c62828;font-weight:700}
+    .good{color:green;font-weight:700}
+
+    .tree{font-family:ui-monospace, monospace;font-size:0.95rem;line-height:1.5}
+    .tree ul{list-style:none;margin:0;padding-left:18px}
+    .tree li{margin:2px 0}
+    .key{color:#0a5666}
+    .val-string{color:#a64}
+    .val-num{color:#07a}
+    .val-bool{color:#d14}
+    .val-null{color:#777}
+
+    .history{max-height:36vh;overflow:auto;margin-top:12px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:200px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,textarea:focus,input:focus{outline:3px solid rgba(0,188,212,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>JSON Formatter & Validator</h1>
+        <p class="lead">Format, validate, minify, preview tree and sort keys for JSON. Sky-blue themed — responsive and privacy-first (runs locally).</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <button id="formatBtn" class="btn primary"><i class="fa-solid fa-code-compare"></i> Format</button>
+        <button id="validateBtn" class="btn ghost"><i class="fa-solid fa-check"></i> Validate</button>
+        <button id="minifyBtn" class="btn ghost"><i class="fa-solid fa-compress"></i> Minify</button>
+        <button id="sortBtn" class="btn ghost"><i class="fa-solid fa-sort-alpha-down"></i> Sort Keys</button>
+        <div class="spacer"></div>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button id="downloadBtn" class="btn ghost"><i class="fa-solid fa-download"></i> Download</button>
+      </div>
+
+      <div class="layout">
+        <section class="pane">
+          <label class="small">Input JSON</label>
+          <textarea id="inputArea" placeholder='Paste JSON here — e.g. {"name":"John", "age":30}' spellcheck="false"></textarea>
+
+          <div class="options">
+            <label class="option"><input type="checkbox" id="preserveOrder"> Preserve original key order</label>
+            <label class="option"><input type="checkbox" id="allowTrailing"> Allow trailing commas (attempt to fix)</label>
+            <label class="option"><input type="checkbox" id="autoFormatOnPaste" checked> Auto-format on paste</label>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <button id="clearBtn" class="btn ghost">Clear</button>
+            <button id="saveBtn" class="btn ghost">Save</button>
+            <div style="flex:1"></div>
+            <div class="small">Tip: Use Validate first to find errors and line number.</div>
+          </div>
+        </section>
+
+        <aside class="pane">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <label class="small">Result</label>
+            <div id="status" class="small"></div>
+          </div>
+
+          <div id="resultArea" class="result"><div id="resultText">Formatted or validation messages will appear here.</div></div>
+
+          <div style="margin-top:12px">
+            <div class="small">Tree Preview</div>
+            <div id="treeArea" class="result tree">JSON tree will appear here after formatting.</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Saved history</div>
+            <div class="history" id="historyList"></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const inputArea = document.getElementById('inputArea');
+    const formatBtn = document.getElementById('formatBtn');
+    const validateBtn = document.getElementById('validateBtn');
+    const minifyBtn = document.getElementById('minifyBtn');
+    const sortBtn = document.getElementById('sortBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const preserveOrder = document.getElementById('preserveOrder');
+    const allowTrailing = document.getElementById('allowTrailing');
+    const autoFormatOnPaste = document.getElementById('autoFormatOnPaste');
+
+    const resultText = document.getElementById('resultText');
+    const treeArea = document.getElementById('treeArea');
+    const status = document.getElementById('status');
+    const historyList = document.getElementById('historyList');
+
+    const STORAGE = 'ti_json_formatter_history_v1';
+
+    function tryParseJSON(text){
+      try{
+        return {ok:true, value: JSON.parse(text)};
+      }catch(e){
+        // try to extract position from message (Chrome/Firefox show at position)
+        return {ok:false, error: e.message};
+      }
+    }
+
+    function fixTrailingCommas(text){
+      // naive attempt: remove trailing commas before } and ]
+      return text.replace(/,\s*(}|\])/g, '$1');
+    }
+
+    function formatJSON(){
+      let txt = inputArea.value.trim();
+      if(!txt){ resultText.textContent = 'No input'; status.textContent = ''; treeArea.innerHTML = ''; return; }
+      if(allowTrailing.checked) txt = fixTrailingCommas(txt);
+      const parsed = tryParseJSON(txt);
+      if(!parsed.ok){ resultText.innerHTML = `<span class="error">Invalid JSON: ${escapeHtml(parsed.error)}</span>`; status.textContent = 'Invalid'; status.className = 'small'; return; }
+      const obj = parsed.value;
+      const out = JSON.stringify(obj, preserveOrder.checked ? null : sortedReplacer, 2);
+      inputArea.value = out; // overwrite with formatted
+      resultText.textContent = out;
+      status.textContent = 'Valid JSON'; status.className = 'good';
+      renderTree(obj);
+      saveHistory({ts:Date.now(), preview: out.slice(0,200), len: out.length});
+    }
+
+    function validateJSON(){
+      let txt = inputArea.value.trim();
+      if(!txt){ resultText.textContent = 'No input'; status.textContent = ''; treeArea.innerHTML = ''; return; }
+      if(allowTrailing.checked) txt = fixTrailingCommas(txt);
+      try{
+        const obj = JSON.parse(txt);
+        resultText.textContent = '✅ JSON is valid'; status.textContent = 'Valid'; status.className = 'good'; renderTree(obj); saveHistory({ts:Date.now(), preview: JSON.stringify(obj).slice(0,200), len: txt.length});
+      }catch(e){
+        resultText.innerHTML = `<span class="error">Invalid JSON: ${escapeHtml(e.message)}</span>`; status.textContent = 'Invalid'; status.className = 'small'; treeArea.innerHTML = '';
+        // attempt to determine line:column if message contains position
+        const pos = extractPositionFromError(e.message);
+        if(pos) resultText.innerHTML += `<div class="small">Error near line ${pos.line}, column ${pos.col}</div>`;
+      }
+    }
+
+    function minifyJSON(){
+      const txt = inputArea.value.trim(); if(!txt){ resultText.textContent = 'No input'; return; }
+      try{
+        const obj = JSON.parse(allowTrailing.checked ? fixTrailingCommas(txt) : txt);
+        const out = JSON.stringify(obj);
+        resultText.textContent = out; status.textContent = 'Minified'; status.className = 'small'; treeArea.innerHTML = '';
+        saveHistory({ts:Date.now(), preview: out.slice(0,200), len: out.length});
+      }catch(e){ resultText.innerHTML = `<span class="error">Invalid JSON: ${escapeHtml(e.message)}</span>`; }
+    }
+
+    function sortedReplacer(key, value){
+      if(value && typeof value === 'object' && !Array.isArray(value)){
+        const sorted = {};
+        Object.keys(value).sort().forEach(k => sorted[k] = value[k]);
+        return sorted;
+      }
+      return value;
+    }
+
+    function sortKeys(){
+      const txt = inputArea.value.trim(); if(!txt){ resultText.textContent = 'No input'; return; }
+      try{
+        const obj = JSON.parse(allowTrailing.checked ? fixTrailingCommas(txt) : txt);
+        const out = JSON.stringify(obj, sortedReplacer, 2);
+        inputArea.value = out; resultText.textContent = out; renderTree(JSON.parse(out)); status.textContent = 'Sorted keys'; status.className = 'small'; saveHistory({ts:Date.now(), preview: out.slice(0,200), len: out.length});
+      }catch(e){ resultText.innerHTML = `<span class="error">Invalid JSON: ${escapeHtml(e.message)}</span>`; }
+    }
+
+    function extractPositionFromError(msg){
+      // messages differ; try extracting a number after 'position' or 'at line'
+      const p = /position\s*(\d+)/i.exec(msg) || /at\sline\s*(\d+)\s*column\s*(\d+)/i.exec(msg);
+      if(!p) return null;
+      if(p.length === 2){ const pos = Number(p[1]); return convertIndexToLineCol(inputArea.value, pos); }
+      if(p.length >= 3){ return {line: Number(p[1]), col: Number(p[2])}; }
+      return null;
+    }
+
+    function convertIndexToLineCol(text, index){
+      index = Math.max(0, Math.min(index, text.length));
+      const upTo = text.slice(0, index);
+      const lines = upTo.split(/\r?\n/);
+      const line = lines.length;
+      const col = lines[lines.length-1].length + 1;
+      return {line, col};
+    }
+
+    function renderTree(obj){
+      treeArea.innerHTML = '';
+      const root = document.createElement('ul');
+      root.style.paddingLeft = '12px';
+      buildNode(obj, root);
+      treeArea.appendChild(root);
+    }
+
+    function buildNode(value, container, keyName){
+      if(typeof value === 'object' && value !== null){
+        const isArray = Array.isArray(value);
+        const li = document.createElement('li');
+        const header = document.createElement('div');
+        header.style.cursor = 'pointer';
+        header.textContent = (keyName !== undefined ? keyName + ': ' : '') + (isArray ? `[Array(${value.length})]` : '{Object}');
+        li.appendChild(header);
+        const childList = document.createElement('ul');
+        childList.style.display = 'none';
+        li.appendChild(childList);
+        header.addEventListener('click', ()=>{ childList.style.display = childList.style.display === 'none' ? 'block' : 'none'; });
+        // populate children
+        const entries = isArray ? value.map((v,i)=> [i,v]) : Object.entries(value);
+        entries.forEach(([k,v])=> buildNode(v, childList, k));
+        container.appendChild(li);
+      } else {
+        const li = document.createElement('li');
+        const keySpan = document.createElement('span'); keySpan.className='key'; if(keyName!==undefined){ keySpan.textContent = keyName + ': '; li.appendChild(keySpan); }
+        const valSpan = document.createElement('span');
+        if(typeof value === 'string'){ valSpan.className='val-string'; valSpan.textContent = '"' + value + '"'; }
+        else if(typeof value === 'number'){ valSpan.className='val-num'; valSpan.textContent = value; }
+        else if(typeof value === 'boolean'){ valSpan.className='val-bool'; valSpan.textContent = value; }
+        else if(value === null){ valSpan.className='val-null'; valSpan.textContent = 'null'; }
+        li.appendChild(valSpan);
+        container.appendChild(li);
+      }
+    }
+
+    copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(resultText.textContent || inputArea.value || ''); copyBtn.textContent='Copied'; setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy',1000); }catch(e){ alert('Copy failed'); } });
+
+    downloadBtn.addEventListener('click', ()=>{ const out = resultText.textContent || inputArea.value || ''; if(!out) return alert('Nothing to download'); const blob = new Blob([out], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); });
+
+    clearBtn.addEventListener('click', ()=>{ if(!inputArea.value) return; if(!confirm('Clear input?')) return; inputArea.value=''; resultText.textContent='Formatted or validation messages will appear here.'; treeArea.innerHTML=''; status.textContent=''; });
+
+    saveBtn.addEventListener('click', ()=>{ const txt = inputArea.value.trim(); if(!txt) return alert('Nothing to save'); saveHistory({ts:Date.now(), preview: txt.slice(0,200), len: txt.length}); alert('Saved to local history'); });
+
+    formatBtn.addEventListener('click', formatJSON);
+    validateBtn.addEventListener('click', validateJSON);
+    minifyBtn.addEventListener('click', minifyJSON);
+    sortBtn.addEventListener('click', sortKeys);
+
+    inputArea.addEventListener('paste', (e)=>{ if(autoFormatOnPaste.checked){ setTimeout(()=>{ try{ const txt = inputArea.value; const parsed = tryParseJSON(allowTrailing.checked ? fixTrailingCommas(txt) : txt); if(parsed.ok){ inputArea.value = JSON.stringify(parsed.value, preserveOrder.checked ? null : sortedReplacer, 2); resultText.textContent = inputArea.value; renderTree(parsed.value); status.textContent = 'Auto-formatted'; } }catch(err){} }, 50); } });
+
+    // history
+    function saveHistory(item){ try{ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; list.unshift(item); if(list.length>50) list.pop(); localStorage.setItem(STORAGE, JSON.stringify(list)); renderHistory(); }catch(e){} }
+    function renderHistory(){ const raw = localStorage.getItem(STORAGE); const list = raw ? JSON.parse(raw) : []; historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved items</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${new Date(it.ts).toLocaleString()}</div><div class="small">${it.len} bytes</div><div style="margin-top:6px" class="small">${escapeHtml(it.preview)}</div>`; el.addEventListener('click', ()=>{ inputArea.value = it.preview; resultText.textContent = it.preview; try{ const obj = JSON.parse(it.preview); renderTree(obj); }catch(e){} }); historyList.appendChild(el); }); }
+
+    function escapeHtml(s){ return s.replace(/[&<>"'`]/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]; }); }
+
+    // init
+    (function init(){ renderHistory(); resultText.textContent = 'Formatted or validation messages will appear here.'; })();
+  </script>
+</body>
+</html>
