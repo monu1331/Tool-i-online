@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Keyword Density Checker — Tool i online</title>
+  <meta name="description" content="Analyze keyword density, frequency and highlights. Light-green themed, responsive and professional UI." />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --green:#8bc34a; --green-700:#7cb342; --bg:#f8fff4; --card:#ffffff; --muted:#466; --radius:12px; --shadow:0 10px 30px rgba(60,100,50,0.06); --maxw:1100px }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:var(--bg);color:#123}
+    .wrap{max-width:var(--maxw);margin:18px auto;padding:16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--green),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+    h1{font-size:1.1rem;margin:0}
+    p.lead{margin:4px 0 0;color:var(--muted);font-size:0.95rem}
+
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .toolbar{display:flex;gap:8px;align-items:center;padding:12px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#fff;border:1px solid rgba(0,0,0,0.06)}
+    .btn.primary{background:var(--green);color:#fff}
+    .btn.ghost{background:#fff}
+    .spacer{flex:1}
+
+    .layout{display:grid;grid-template-columns:1fr 380px;gap:14px;padding:16px}
+    .pane{display:flex;flex-direction:column;gap:10px}
+    label.small{font-size:0.9rem;color:var(--muted)}
+    textarea,input,select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:0.95rem}
+    textarea{min-height:220px;resize:vertical}
+
+    .options{display:flex;gap:8px;flex-wrap:wrap}
+    .option{display:flex;gap:6px;align-items:center}
+
+    .stats{display:flex;gap:12px;flex-wrap:wrap}
+    .stat{background:linear-gradient(180deg,#fff,#fbfff2);padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);min-width:120px;text-align:center}
+    .stat strong{display:block;font-size:1.05rem}
+
+    .results{margin-top:8px}
+    .result-row{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+    .bar{height:10px;border-radius:6px;background:linear-gradient(90deg,var(--green),var(--green-700));flex:1}
+    .badge{min-width:56px;text-align:center}
+
+    .highlighted{background:linear-gradient(90deg, rgba(139,195,74,0.15), rgba(124,179,66,0.08));padding:4px 6px;border-radius:4px}
+
+    .history{max-height:30vh;overflow:auto;margin-top:8px}
+    .history-item{padding:8px;border-radius:8px;background:#fff;border:1px solid rgba(0,0,0,0.04);margin-bottom:8px}
+
+    @media (max-width:980px){ .layout{grid-template-columns:1fr} textarea{min-height:160px} }
+    @media (max-width:480px){ header{gap:8px} h1{font-size:1rem} }
+
+    button:focus,input:focus,textarea:focus{outline:3px solid rgba(139,195,74,0.14)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Keyword Density Checker</h1>
+        <p class="lead">Analyze keyword frequency, density and highlights. Light-green themed; runs entirely in the browser.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="toolbar">
+        <button id="analyzeBtn" class="btn primary"><i class="fa-solid fa-chart-simple"></i> Analyze</button>
+        <button id="clearBtn" class="btn ghost">Clear</button>
+        <button id="copyBtn" class="btn ghost"><i class="fa-solid fa-copy"></i> Copy CSV</button>
+        <div class="spacer"></div>
+        <label class="small">Auto-highlight <input type="checkbox" id="autoHighlight" checked></label>
+      </div>
+
+      <div class="layout">
+        <section class="pane">
+          <label class="small">Paste or type text to analyze</label>
+          <textarea id="inputArea" placeholder="Paste article, blog post or any text here..."></textarea>
+
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="keywordInput" placeholder="Optional: focus keyword (comma separated)" />
+            <button id="addFocusBtn" class="btn ghost">Focus</button>
+          </div>
+
+          <div class="options">
+            <label class="option small"><input type="checkbox" id="ignoreStopwords" checked> Ignore common stopwords</label>
+            <label class="option small"><input type="checkbox" id="caseSensitive"> Case sensitive</label>
+            <label class="option small"><input type="checkbox" id="excludeNumbers"> Exclude numbers</label>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <label class="small">Show top</label>
+            <select id="topN">
+              <option>10</option>
+              <option>20</option>
+              <option>50</option>
+            </select>
+            <div style="flex:1"></div>
+            <button id="exportBtn" class="btn ghost">Download CSV</button>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Summary</div>
+            <div class="stats" id="summary">
+              <div class="stat"><span class="small">Words</span><strong id="wordCount">0</strong></div>
+              <div class="stat"><span class="small">Unique</span><strong id="uniqueCount">0</strong></div>
+              <div class="stat"><span class="small">Sentences</span><strong id="sentenceCount">0</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="pane">
+          <div>
+            <label class="small">Top Keywords</label>
+            <div id="results" class="results" style="margin-top:8px">No results yet</div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">Highlighted text</label>
+            <div id="highlightArea" class="result-row" style="min-height:120px;white-space:pre-wrap;overflow:auto"></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label class="small">Saved analyses</label>
+            <div class="history" id="historyList"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="saveBtn" class="btn ghost">Save</button>
+              <button id="clearHistory" class="btn ghost">Clear</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Basic keyword density checker — client-side only
+    const inputArea = document.getElementById('inputArea');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const results = document.getElementById('results');
+    const wordCountEl = document.getElementById('wordCount');
+    const uniqueCountEl = document.getElementById('uniqueCount');
+    const sentenceCountEl = document.getElementById('sentenceCount');
+    const highlightArea = document.getElementById('highlightArea');
+    const autoHighlight = document.getElementById('autoHighlight');
+    const ignoreStopwords = document.getElementById('ignoreStopwords');
+    const caseSensitive = document.getElementById('caseSensitive');
+    const excludeNumbers = document.getElementById('excludeNumbers');
+    const topN = document.getElementById('topN');
+    const keywordInput = document.getElementById('keywordInput');
+    const addFocusBtn = document.getElementById('addFocusBtn');
+    const summary = document.getElementById('summary');
+
+    const saveBtn = document.getElementById('saveBtn');
+    const historyList = document.getElementById('historyList');
+    const clearHistory = document.getElementById('clearHistory');
+    const saveStorage = 'ti_keyword_history_v1';
+
+    const stopwords = new Set(['the','is','in','and','to','a','of','that','it','on','for','with','as','are','this','was','but','be','by','or','an','from','at','which','you','have','has','not']);
+
+    function normalizeWord(w){ return w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '').trim(); }
+
+    function analyze(){
+      const raw = inputArea.value || '';
+      const text = raw.trim();
+      if(!text){ results.innerHTML = 'Please paste some text to analyze.'; return; }
+
+      // split words (unicode-aware)
+      const words = text.match(/\p{L}[\p{L}0-9'’\-]*/gu) || [];
+      const wordsFiltered = words.filter(w=> w && normalizeWord(w).length > 0);
+      const totalWords = wordsFiltered.length;
+
+      // sentences (simple split)
+      const sentences = text.split(/[.!?]+\s*/).filter(s=>s.trim().length>0);
+
+      const freq = new Map();
+      wordsFiltered.forEach(wRaw =>{
+        let w = caseSensitive.checked ? wRaw : wRaw.toLowerCase();
+        w = normalizeWord(w);
+        if(!w) return;
+        if(excludeNumbers.checked && /^\d+$/.test(w)) return;
+        if(ignoreStopwords.checked && stopwords.has(w)) return;
+        freq.set(w, (freq.get(w)||0) + 1);
+      });
+
+      const unique = freq.size;
+      // convert to array
+      const arr = Array.from(freq.entries()).map(([k,v])=> ({word:k,count:v, density: totalWords ? (v/totalWords)*100 : 0}));
+      arr.sort((a,b)=> b.count - a.count || a.word.localeCompare(b.word));
+      const n = parseInt(topN.value,10) || 10;
+      const top = arr.slice(0,n);
+
+      // update stats
+      wordCountEl.textContent = totalWords;
+      uniqueCountEl.textContent = unique;
+      sentenceCountEl.textContent = sentences.length;
+
+      // render results
+      if(!top.length){ results.innerHTML = '<div class="small">No keywords found (try unchecking ignore stopwords)</div>'; highlightArea.textContent = text; return; }
+
+      results.innerHTML = '';
+      const maxCount = top[0].count || 1;
+      top.forEach(item=>{
+        const row = document.createElement('div'); row.className = 'result-row';
+        const label = document.createElement('div'); label.style.width='160px'; label.innerHTML = `<strong>${item.word}</strong><div class="small">${item.count} occurrences</div>`;
+        const barWrap = document.createElement('div'); barWrap.style.flex='1'; const bar = document.createElement('div'); bar.className='bar'; const pct = Math.round((item.count/maxCount)*100);
+        bar.style.width = pct + '%'; barWrap.appendChild(bar);
+        const badge = document.createElement('div'); badge.className='badge'; badge.innerHTML = `${item.density.toFixed(2)}%`;
+        row.appendChild(label); row.appendChild(barWrap); row.appendChild(badge);
+        results.appendChild(row);
+
+        // click to highlight this word
+        row.addEventListener('click', ()=> highlightWord(item.word));
+      });
+
+      // highlight most important words in the text if option selected
+      if(autoHighlight.checked){ const topWords = top.map(t=>t.word); highlightText(text, topWords); } else { highlightArea.textContent = text; }
+
+      // store last analysis in memory (not saved) for export
+      window.__lastAnalysis = {raw:text, totalWords, arr};
+    }
+
+    function highlightText(text, words){
+      if(!words || !words.length){ highlightArea.textContent = text; return; }
+      // build regex that matches whole words (case-insensitive if not caseSensitive)
+      const flags = caseSensitive.checked ? 'gu' : 'giu';
+      const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+      const re = new RegExp(`\\b(${escaped})\\b`, flags);
+      const html = text.replace(re, match => `<span class="highlighted">${match}</span>`);
+      highlightArea.innerHTML = html;
+    }
+
+    function highlightWord(word){ highlightText(inputArea.value || '', [word]); }
+
+    analyzeBtn.addEventListener('click', analyze);
+    inputArea.addEventListener('input', ()=>{ if(autoHighlight.checked){ analyze(); } });
+
+    addFocusBtn.addEventListener('click', ()=>{
+      const k = keywordInput.value.trim(); if(!k) return; const parts = k.split(',').map(s=>s.trim()).filter(Boolean); highlightText(inputArea.value || '', parts); });
+
+    // CSV export
+    function exportCSV(){ const analysis = window.__lastAnalysis; if(!analysis){ return alert('Nothing to export — run analysis first'); }
+      const arr = analysis.arr.slice().sort((a,b)=> b[1]-a[1]); // raw format earlier: Map entries
+      // using freq map - rebuild
+      const freqMap = new Map(analysis.arr.map(o=>[o.word,o.count]));
+      const rows = [['word','count','density']];
+      const total = analysis.totalWords || 0;
+      const sorted = Array.from(freqMap.entries()).sort((a,b)=> b[1]-a[1]);
+      sorted.forEach(([w,c])=> rows.push([w,c, ((c/total)*100).toFixed(4)]));
+      const csv = rows.map(r=> r.map(cell=> '"'+String(cell).replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'keyword-density.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+    // copy CSV
+    document.getElementById('copyBtn').addEventListener('click', async ()=>{
+      const analysis = window.__lastAnalysis; if(!analysis) return alert('Run analysis first');
+      const freqMap = new Map(analysis.arr.map(o=>[o.word,o.count])); const total = analysis.totalWords || 0; const lines = [['word','count','density']]; Array.from(freqMap.entries()).sort((a,b)=>b[1]-a[1]).forEach(([w,c])=> lines.push([w,c, ((c/total)*100).toFixed(4)])); const csv = lines.map(r=> r.join(',')).join('\n'); try{ await navigator.clipboard.writeText(csv); alert('Copied CSV to clipboard'); }catch(e){ alert('Copy failed'); }
+    });
+
+    // save history
+    function saveAnalysis(){ const raw = inputArea.value || ''; if(!raw.trim()) return alert('Nothing to save'); const saved = JSON.parse(localStorage.getItem(saveStorage) || '[]'); saved.unshift({ts:Date.now(), text: raw.slice(0,500), stats: {words: window.__lastAnalysis ? window.__lastAnalysis.totalWords : 0}}); if(saved.length>50) saved.pop(); localStorage.setItem(saveStorage, JSON.stringify(saved)); renderHistory(); alert('Saved analysis'); }
+    function renderHistory(){ const list = JSON.parse(localStorage.getItem(saveStorage) || '[]'); historyList.innerHTML = ''; if(!list.length){ historyList.innerHTML = '<div class="small">No saved analyses</div>'; return; } list.forEach(it=>{ const el = document.createElement('div'); el.className='history-item'; el.innerHTML = `<div style="font-weight:700">${new Date(it.ts).toLocaleString()}</div><div class="small">Words: ${it.stats.words}</div><div class="small">${escapeHtml(it.text)}</div>`; el.addEventListener('click', ()=>{ inputArea.value = it.text; analyze(); }); historyList.appendChild(el); }); }
+    saveBtn.addEventListener('click', saveAnalysis);
+    clearHistory.addEventListener('click', ()=>{ if(confirm('Clear saved analyses?')){ localStorage.removeItem(saveStorage); renderHistory(); } });
+
+    document.getElementById('clearBtn').addEventListener('click', ()=>{ if(confirm('Clear input and results?')){ inputArea.value=''; results.innerHTML='No results yet'; highlightArea.textContent=''; wordCountEl.textContent='0'; uniqueCountEl.textContent='0'; sentenceCountEl.textContent='0'; window.__lastAnalysis = null; } });
+
+    function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+    function init(){ renderHistory(); }
+    init();
+  </script>
+</body>
+</html>
