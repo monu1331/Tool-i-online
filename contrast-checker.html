@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contrast Checker — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --pink:#D81B60;
+      --pink-dark:#b0174a;
+      --bg:#ffffff;
+      --muted:#6b6b6b;
+      --card-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      --radius:12px;
+      --container:1100px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#fff,#fbfbfb);color:#222;padding:22px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:var(--card-shadow)}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:16px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .control{display:flex;flex-direction:column;gap:6px}
+    input[type=color], input[type=text], select{padding:10px;border-radius:10px;border:1px solid #eee}
+    input[type=range]{width:100%}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--pink);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee}
+    .swap{background:linear-gradient(90deg,var(--pink),var(--pink-dark));color:#fff;border:none;padding:8px 10px;border-radius:8px}
+
+    .preview{border-radius:10px;padding:18px;min-height:140px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;justify-content:center}
+    .sample{padding:12px;border-radius:8px;width:100%}
+    .sample.small{font-size:14px}
+    .sample.large{font-size:20px;font-weight:700}
+
+    .result{display:flex;flex-direction:column;gap:8px}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-weight:700}
+    .pass{background:#e6f7ee;color:#097a3d}
+    .fail{background:#fff0f0;color:#b71c1c}
+
+    .info{font-size:13px;color:var(--muted)}
+
+    .copy-row{display:flex;gap:8px;flex-wrap:wrap}
+    .code{font-family:monospace;background:#fafafa;padding:8px;border-radius:8px;border:1px solid #f0f0f0}
+
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Contrast Checker</h1>
+        <div class="lead">Check contrast ratios between foreground and background colors (WCAG AA / AAA). Pink-themed.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="controls">
+              <div class="control" style="min-width:160px">
+                <label class="info">Foreground (text)</label>
+                <input id="fgColor" type="color" value="#111111">
+                <input id="fgHex" type="text" placeholder="#111111" aria-label="foreground hex">
+              </div>
+
+              <div class="control" style="min-width:160px">
+                <label class="info">Background</label>
+                <input id="bgColor" type="color" value="#ffffff">
+                <input id="bgHex" type="text" placeholder="#ffffff" aria-label="background hex">
+              </div>
+
+              <div style="display:flex;flex-direction:column;justify-content:center;gap:8px">
+                <button id="swapBtn" class="swap" title="Swap colors">Swap</button>
+                <button id="randBtn" class="btn ghost" title="Random colors">Random</button>
+              </div>
+            </div>
+
+            <div class="card" style="padding:12px">
+              <div class="info">Preview</div>
+              <div id="preview" class="preview sample" style="background:#fff;color:#111">
+                <div id="sampleLarge" class="sample large">The quick brown fox jumps over the lazy dog — 20px</div>
+                <div id="sampleSmall" class="sample small">This is body text example — 14px</div>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap">
+                <label class="info">Text size for evaluation:</label>
+                <select id="textSize"><option value="normal">Normal (14px)</option><option value="large">Large (18-24px)</option></select>
+                <label class="info">Include bold as large?</label>
+                <input id="largeIsBold" type="checkbox">
+              </div>
+
+            </div>
+
+            <div style="margin-top:12px" class="info">Notes: WCAG contrast ratio ranges from 1:1 (no contrast) to 21:1 (maximum). AA requires 4.5:1 for normal text, 3:1 for large text. AAA requires 7:1 for normal, 4.5:1 for large.</div>
+          </div>
+        </section>
+
+        <aside>
+          <div class="card">
+            <div class="result">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="info">Contrast ratio</div>
+                  <div id="ratio" style="font-size:24px;font-weight:800">—</div>
+                </div>
+                <div>
+                  <div id="aaBadge" class="badge">AA</div>
+                  <div id="aaaBadge" class="badge" style="margin-top:8px">AAA</div>
+                </div>
+              </div>
+
+              <div style="margin-top:8px">
+                <div class="info">Status</div>
+                <div id="statusBox" class="badge fail" style="margin-top:8px">—</div>
+              </div>
+
+              <div style="margin-top:12px">
+                <div class="info">Accessibility suggestions</div>
+                <ul id="suggestions" class="info" style="margin-top:8px"></ul>
+              </div>
+
+              <div style="margin-top:12px">
+                <div class="info">CSS snippets</div>
+                <div style="margin-top:8px" class="code">color: <span id="outFg">#111</span>; background: <span id="outBg">#fff</span>;</div>
+                <div style="margin-top:8px" class="copy-row">
+                  <button id="copyCss" class="btn ghost">Copy CSS</button>
+                  <button id="copyHexes" class="btn ghost">Copy HEXs</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Elements
+    const fgColor = document.getElementById('fgColor');
+    const bgColor = document.getElementById('bgColor');
+    const fgHex = document.getElementById('fgHex');
+    const bgHex = document.getElementById('bgHex');
+    const swapBtn = document.getElementById('swapBtn');
+    const randBtn = document.getElementById('randBtn');
+    const previewBox = document.getElementById('preview');
+    const sampleLarge = document.getElementById('sampleLarge');
+    const sampleSmall = document.getElementById('sampleSmall');
+    const ratioEl = document.getElementById('ratio');
+    const aaBadge = document.getElementById('aaBadge');
+    const aaaBadge = document.getElementById('aaaBadge');
+    const statusBox = document.getElementById('statusBox');
+    const suggestions = document.getElementById('suggestions');
+    const textSize = document.getElementById('textSize');
+    const largeIsBold = document.getElementById('largeIsBold');
+    const outFg = document.getElementById('outFg');
+    const outBg = document.getElementById('outBg');
+    const copyCss = document.getElementById('copyCss');
+    const copyHexes = document.getElementById('copyHexes');
+
+    // helpers
+    function normHex(s){ if(!s) return null; s = s.trim(); if(s[0]==='#') s = s.slice(1); if(s.length===3) s = s.split('').map(c=>c+c).join(''); if(!/^[0-9a-fA-F]{6}$/.test(s)) return null; return '#'+s.toUpperCase(); }
+    function hexToRgb(hex){ hex = hex.replace('#',''); return {r:parseInt(hex.slice(0,2),16), g:parseInt(hex.slice(2,4),16), b:parseInt(hex.slice(4,6),16)} }
+    function luminance(r,g,b){ const a=[r,g,b].map(v=>{ v/=255; return v<=0.03928? v/12.92: Math.pow((v+0.055)/1.055,2.4); }); return 0.2126*a[0] + 0.7152*a[1] + 0.0722*a[2]; }
+    function contrastRatio(hex1, hex2){ const c1 = hexToRgb(hex1); const c2 = hexToRgb(hex2); const L1 = luminance(c1.r,c1.g,c1.b); const L2 = luminance(c2.r,c2.g,c2.b); const lighter = Math.max(L1,L2); const darker = Math.min(L1,L2); return (lighter + 0.05) / (darker + 0.05); }
+
+    function updateUI(){
+      const a = normHex(fgHex.value) || fgColor.value;
+      const b = normHex(bgHex.value) || bgColor.value;
+      const fg = normHex(a) || '#111111';
+      const bg = normHex(b) || '#FFFFFF';
+      // update inputs
+      fgColor.value = fg; fgHex.value = fg;
+      bgColor.value = bg; bgHex.value = bg;
+      // preview
+      previewBox.style.background = bg; previewBox.style.color = fg;
+      sampleLarge.style.color = fg; sampleSmall.style.color = fg;
+      // ratio
+      const ratio = contrastRatio(fg,bg); const rStr = ratio.toFixed(2) + ':1'; ratioEl.textContent = rStr;
+      outFg.textContent = fg; outBg.textContent = bg;
+      // evaluate WCAG
+      const isLarge = textSize.value === 'large' || largeIsBold.checked;
+      const aaReq = isLarge ? 3 : 4.5;
+      const aaaReq = isLarge ? 4.5 : 7;
+      // set badges
+      aaBadge.textContent = `AA ${aaReq}:1`;
+      aaaBadge.textContent = `AAA ${aaaReq}:1`;
+      aaBadge.className = 'badge ' + (ratio >= aaReq ? 'pass' : 'fail');
+      aaaBadge.className = 'badge ' + (ratio >= aaaReq ? 'pass' : 'fail');
+      // status
+      if(ratio >= aaaReq) {
+        statusBox.textContent = 'Meets AAA (best)'; statusBox.className = 'badge pass';
+      } else if(ratio >= aaReq) {
+        statusBox.textContent = 'Meets AA'; statusBox.className = 'badge pass';
+      } else {
+        statusBox.textContent = 'Fails WCAG contrast'; statusBox.className = 'badge fail';
+      }
+      // suggestions
+      suggestions.innerHTML = '';
+      if(ratio < aaReq){
+        const need = aaReq;
+        suggestions.appendChild(makeSuggestion(fg,bg,need));
+        const s2 = document.createElement('li'); s2.textContent = 'Try increasing text size or using a higher-contrast foreground/background.'; suggestions.appendChild(s2);
+      } else {
+        const li = document.createElement('li'); li.textContent = 'Contrast is sufficient for selected size.'; suggestions.appendChild(li);
+      }
+    }
+
+    function makeSuggestion(fg,bg,req){
+      // simple suggestion: try black or white foreground and see which passes
+      const blackRatio = contrastRatio('#000000', bg);
+      const whiteRatio = contrastRatio('#FFFFFF', bg);
+      const li = document.createElement('li');
+      if(blackRatio >= req) li.textContent = `Use black (#000000) as foreground—contrast ${blackRatio.toFixed(2)}:1.`;
+      else if(whiteRatio >= req) li.textContent = `Use white (#FFFFFF) as foreground—contrast ${whiteRatio.toFixed(2)}:1.`;
+      else li.textContent = `Consider changing background or foreground to reach ${req}:1 contrast.`;
+      return li;
+    }
+
+    // events
+    fgColor.addEventListener('input', ()=>{ fgHex.value = fgColor.value; updateUI(); });
+    bgColor.addEventListener('input', ()=>{ bgHex.value = bgColor.value; updateUI(); });
+    fgHex.addEventListener('change', ()=>{ const h = normHex(fgHex.value); if(h) fgColor.value = h; else alert('Invalid HEX'); updateUI(); });
+    bgHex.addEventListener('change', ()=>{ const h = normHex(bgHex.value); if(h) bgColor.value = h; else alert('Invalid HEX'); updateUI(); });
+    textSize.addEventListener('change', updateUI);
+    largeIsBold.addEventListener('change', updateUI);
+
+    swapBtn.addEventListener('click', ()=>{
+      const a = fgColor.value, b = bgColor.value; fgColor.value = b; bgColor.value = a; fgHex.value = fgColor.value; bgHex.value = bgColor.value; updateUI();
+    });
+
+    randBtn.addEventListener('click', ()=>{
+      function rand(){ return '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'); }
+      fgColor.value = rand(); bgColor.value = rand(); fgHex.value = fgColor.value; bgHex.value = bgColor.value; updateUI();
+    });
+
+    copyCss.addEventListener('click', ()=>{ const css = `color: ${outFg.textContent}; background: ${outBg.textContent};`; navigator.clipboard.writeText(css); copyCss.textContent='Copied'; setTimeout(()=>copyCss.textContent='Copy CSS',1200); });
+    copyHexes.addEventListener('click', ()=>{ navigator.clipboard.writeText(outFg.textContent + ' ' + outBg.textContent); copyHexes.textContent='Copied'; setTimeout(()=>copyHexes.textContent='Copy HEXs',1200); });
+
+    // init
+    (function init(){ fgHex.value = fgColor.value; bgHex.value = bgColor.value; updateUI(); })();
+  </script>
+</body>
+</html>
