@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Barcode Generator — Tool i online</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{ --orange:#FB8C00; --orange-dark:#e67a00; --muted:#666; --bg:#fff; --radius:12px; --shadow:0 10px 30px rgba(0,0,0,0.06); --container:1000px }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;background:linear-gradient(180deg,#fff,#fcfcfc);color:#222;padding:18px}
+    .wrap{max-width:var(--container);margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:var(--shadow)}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);font-size:14px;margin-top:4px}
+
+    .card{background:var(--bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+
+    label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block}
+    input[type=text], select, input[type=number]{width:100%;padding:10px;border-radius:10px;border:1px solid #eee}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.primary{background:var(--orange);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #eee}
+
+    .preview{border-radius:12px;min-height:180px;display:flex;align-items:center;justify-content:center;border:1px solid #f0f0f0;padding:18px;flex-direction:column}
+    .controls{display:flex;flex-direction:column;gap:10px}
+    .row{display:flex;gap:8px;align-items:center}
+    .small{font-size:13px;color:var(--muted)}
+    .options{display:flex;gap:8px;flex-wrap:wrap}
+    .code{font-family:monospace;background:#fafafa;padding:8px;border-radius:8px;border:1px solid #f0f0f0;word-break:break-all}
+
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">Ti</div>
+      <div>
+        <h1>Barcode Generator</h1>
+        <div class="lead">Generate various 1D barcodes (Code128, EAN13, UPC, Code39, ITF) — orange theme, responsive, client-side.</div>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="grid">
+        <section>
+          <div class="controls">
+            <div>
+              <label>Data (text or digits)</label>
+              <input id="dataInput" type="text" placeholder="Enter barcode data (e.g. 123456789012)" aria-label="barcode data">
+            </div>
+
+            <div style="display:flex;gap:8px">
+              <div style="flex:1">
+                <label>Format</label>
+                <select id="formatSelect">
+                  <option value="CODE128">CODE128</option>
+                  <option value="EAN13">EAN13</option>
+                  <option value="UPC">UPC</option>
+                  <option value="CODE39">CODE39</option>
+                  <option value="ITF">ITF</option>
+                </select>
+              </div>
+              <div style="width:120px">
+                <label>Width</label>
+                <input id="widthInput" type="number" min="1" value="2">
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px">
+              <div style="flex:1">
+                <label>Height (px)</label>
+                <input id="heightInput" type="number" min="20" value="100">
+              </div>
+              <div style="width:120px">
+                <label>Margin</label>
+                <input id="marginInput" type="number" min="0" value="10">
+              </div>
+            </div>
+
+            <div class="options">
+              <label style="display:flex;align-items:center;gap:8px"><input id="displayValue" type="checkbox" checked> Show text</label>
+              <label style="display:flex;align-items:center;gap:8px"><input id="flat" type="checkbox"> Flat (no background)</label>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="generateBtn" class="btn primary"><i class="fa-solid fa-barcode"></i> Generate</button>
+              <button id="downloadBtn" class="btn ghost" disabled><i class="fa-solid fa-download"></i> Download PNG</button>
+              <button id="copyBtn" class="btn ghost" disabled><i class="fa-solid fa-copy"></i> Copy</button>
+            </div>
+
+            <div class="small">Notes: EAN13 expects 12 digits (checksum auto-calculated). UPC expects 11 digits. Code39 supports uppercase letters, digits and - . $ / + % space.</div>
+          </div>
+        </section>
+
+        <aside>
+          <div>
+            <div class="small">Preview</div>
+            <div id="preview" class="preview card">
+              <svg id="barcodeSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+              <canvas id="rasterCanvas" style="display:none"></canvas>
+            </div>
+
+            <div style="margin-top:12px" class="card">
+              <div class="small">Generated SVG / PNG</div>
+              <div style="margin-top:8px" id="outCode" class="code">—</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- JsBarcode CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script>
+    const dataInput = document.getElementById('dataInput');
+    const formatSelect = document.getElementById('formatSelect');
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+    const marginInput = document.getElementById('marginInput');
+    const displayValue = document.getElementById('displayValue');
+    const flat = document.getElementById('flat');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const barcodeSvg = document.getElementById('barcodeSvg');
+    const rasterCanvas = document.getElementById('rasterCanvas');
+    const outCode = document.getElementById('outCode');
+
+    function sanitizeInputForFormat(data, fmt){ if(fmt==='EAN13'){ return data.replace(/[^0-9]/g,'').slice(0,12); } if(fmt==='UPC'){ return data.replace(/[^0-9]/g,'').slice(0,11); } if(fmt==='CODE39'){ return data.toUpperCase().replace(/[^0-9A-Z \-\.\$\/\+%]/g,''); } return data; }
+
+    async function generate(){
+      const data = dataInput.value.trim(); const fmt = formatSelect.value; const width = Math.max(1, Number(widthInput.value)||2); const height = Math.max(20, Number(heightInput.value)||100); const margin = Math.max(0, Number(marginInput.value)||10);
+      if(!data){ alert('Please enter barcode data'); return; }
+      const value = sanitizeInputForFormat(data, fmt);
+      // configure options
+      const opts = {
+        format: fmt,
+        lineColor: '#000000',
+        background: flat.checked ? 'transparent' : '#FFFFFF',
+        width: width,
+        height: height,
+        margin: margin,
+        displayValue: displayValue.checked,
+        text: undefined,
+      };
+      try{
+        // JsBarcode will throw for invalid data/format combinations
+        JsBarcode(barcodeSvg, value, opts);
+        // set svg size for export
+        barcodeSvg.setAttribute('width', (barcodeSvg.getBBox().width || 300) + 'px');
+        barcodeSvg.setAttribute('height', (barcodeSvg.getBBox().height || height) + 'px');
+        // show SVG source
+        outCode.textContent = new XMLSerializer().serializeToString(barcodeSvg);
+        downloadBtn.disabled = false; copyBtn.disabled = false;
+      }catch(err){ alert('Barcode generation failed: ' + err.message); downloadBtn.disabled=true; copyBtn.disabled=true; }
+    }
+
+    function downloadPNG(){ // render SVG to canvas and download PNG
+      const svgString = new XMLSerializer().serializeToString(barcodeSvg);
+      const blob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = ()=>{
+        rasterCanvas.width = img.width; rasterCanvas.height = img.height; const ctx = rasterCanvas.getContext('2d'); ctx.clearRect(0,0,rasterCanvas.width,rasterCanvas.height);
+        // If background is transparent, fill white? keep as-is
+        ctx.drawImage(img,0,0);
+        rasterCanvas.toBlob(b=>{ const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'barcode.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),5000); }, 'image/png');
+        URL.revokeObjectURL(url);
+      };
+      img.onerror = (e)=>{ alert('Rasterization failed'); URL.revokeObjectURL(url); };
+      img.src = url;
+    }
+
+    async function copyImage(){ rasterCanvas.toBlob(async b=>{ try{ const item = new ClipboardItem({'image/png': b}); await navigator.clipboard.write([item]); alert('Barcode image copied to clipboard'); }catch(e){ alert('Copy failed: '+e.message); } }, 'image/png'); }
+
+    generateBtn.addEventListener('click', generate);
+    downloadBtn.addEventListener('click', downloadPNG);
+    copyBtn.addEventListener('click', copyImage);
+
+    // quick presets
+    formatSelect.addEventListener('change', ()=>{
+      if(formatSelect.value==='EAN13') dataInput.value = '123456789012';
+      if(formatSelect.value==='UPC') dataInput.value = '12345678901';
+    });
+
+    // auto-generate on Enter
+    dataInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); generate(); } });
+
+    // initial demo
+    (function init(){ dataInput.value = '012345678901'; formatSelect.value='EAN13'; generate(); })();
+  </script>
+</body>
+</html>
